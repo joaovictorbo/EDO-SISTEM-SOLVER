@@ -10,7 +10,7 @@ ambiente3d(): Seta o ambiente 3d e devolve "axes" para plotagem 3d para a matplo
 """
 
 import matplotlib.pyplot as plt  # type: ignore
-from util.types import Real
+from numbers import Real
 
 
 def dominio() -> tuple[Real, Real, Real, Real, int]:
