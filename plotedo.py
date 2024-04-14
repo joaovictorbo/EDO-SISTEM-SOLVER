@@ -147,8 +147,8 @@ def model(y, t, f, g, a, fR, uR, gR, vR, cR, sigma):
 # Set the parameter values
 
 uR = 0.2
-vR = 0.5
-cR = 0.5
+vR = 0.3
+cR = 0.4
 fR = f(uR, vR, cR)
 gR = g(uR, vR, cR)
 aR = a(cR)
@@ -179,3 +179,15 @@ c = sol[:,2]
 fig = go.Figure()
 fig.add_trace(go.Scatter3d(x=c, y=v, z=u, mode='lines', name='3D Curve'))
 fig.show()
+# Plot the projections
+fig_uc = go.Figure()
+fig_uc.add_trace(go.Scatter(x=u, y=c, mode='lines', name='uc'))
+fig_uc.show()
+
+fig_vc = go.Figure()
+fig_vc.add_trace(go.Scatter(x=v, y=c, mode='lines', name='vc'))
+fig_vc.show()
+
+fig_uv = go.Figure()
+fig_uv.add_trace(go.Scatter(x=u, y=v, mode='lines', name='uv'))
+fig_uv.show()
