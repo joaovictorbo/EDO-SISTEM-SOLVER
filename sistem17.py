@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 # Definição das funções F e G
 def F(u, v, z):
@@ -70,12 +71,14 @@ sol = solve_ivp(system, s_span, y0, method='RK45', t_eval=np.linspace(0, 1, 100)
 if sol.y.shape[0] != 3:
     raise ValueError("A solução não retornou os valores esperados.")
 
-# Plot dos resultados
-plt.plot(sol.t, sol.y[0], label='u(s)')
-plt.plot(sol.t, sol.y[1], label='v(s)')
-plt.plot(sol.t, sol.y[2], label='z(s)')
-plt.xlabel('s')
-plt.ylabel('Valores')
-plt.legend()
-plt.title('Solução do sistema de EDOs')
+# Plot dos resultados em 3D
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+
+ax.plot(sol.y[0], sol.y[1], sol.y[2], label='Trajetória')
+ax.set_xlabel('u(s)')
+ax.set_ylabel('v(s)')
+ax.set_zlabel('z(s)')
+ax.legend()
+plt.title('Solução do sistema de EDOs em 3D')
 plt.show()
