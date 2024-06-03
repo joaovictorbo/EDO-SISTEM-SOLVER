@@ -178,4 +178,6 @@ c = sol[:,2]
 # Plot the solutions
 fig = go.Figure()
 fig.add_trace(go.Scatter3d(x=c, y=v, z=u, mode='lines', name='3D Curve'))
+# Add the red ball at the initial point
+fig.add_trace(go.Scatter3d(x=[c0], y=[v0], z=[u0], mode='markers', marker=dict(size=5, color='red'), name='Initial Point'))
 fig.show()
