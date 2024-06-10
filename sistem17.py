@@ -91,9 +91,9 @@ def system_with_transition(s, y):
             else:
                 dv_du = -det_vz / det_uz
                 dz_du = det_uz / det_vz
+            du_ds = 1
             dv_ds = dv_du * du_ds
             dz_ds = dz_du * du_ds
-            du_ds = 1
         else:
             # Sistema original
             du_ds = det_uv / det_uz
