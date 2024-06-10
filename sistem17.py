@@ -58,7 +58,6 @@ def dG_dz(u, v, z):
 def system_with_transition(s, y):
     u, v, z = y
     print(f"Transition system input: u={u}, v={v}, z={z}")
-    input("Press Enter to continue...")
     try:
         # Calculando os determinantes
         mat_uv = np.array([[dF_dv(u, v, z), dF_dz(u, v, z)],
@@ -110,7 +109,7 @@ def system_with_transition(s, y):
     return [du_ds, dv_ds, dz_ds]
 
 # Condições iniciais
-u0 = 0.5  # Exemplo
+u0 = 0.4  # Exemplo
 v0 = 0.5  # Exemplo
 z0 = 0.3  # Exemplo
 y0 = [u0, v0, z0]
