@@ -3,6 +3,7 @@ from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
+
 muw0 = 1.0  # Viscosidade inicial sem polimero
 muo = 4.0
 mug = 0.25
@@ -27,32 +28,63 @@ def muwc(c): # dmuw/dc
 def D(u, v, c): # Denominador
     w = 1 - u - v
     return u**2 / muw(c) + v**2 / muo + w**2 / mug
-
-# Definição das funções F e G
-def F(u, v, z):
+def a(z):
+    return np.sqrt(z)
+# Definição das funções f e g
+def f(u, v, z):
     return (u**2 / muw(z)) / D(u, v, z)
 
-def G(u, v, z):
+def g(u, v, z):
     return (v**2 / muo) / D(u, v, z)
 
-# Derivadas parciais de F e G
-def dF_du(u, v, z):
+# Derivadas parciais de f e g
+def df_du(u, v, z):
     return (2 * u / muw(z) * D(u, v, z) - u**2 / muw(z) * Du(u, v, z)) / (D(u, v, z)**2)
 
-def dF_dv(u, v, z):
+def df_dv(u, v, z):
     return (-u**2 / muw(z) * Dv(u, v, z)) / (D(u, v, z)**2)
 
-def dF_dz(u, v, z):
+def df_dz(u, v, z):
     return u**2 * (-(muwc(z) / muw(z)**2) * D(u, v, z) - Dz(u, v, z) / muw(z)) / (D(u, v, z)**2)
 
-def dG_du(u, v, z):
+def dg_du(u, v, z):
     return (-v**2 / muo) * Du(u, v, z) / (D(u, v, z)**2)
 
-def dG_dv(u, v, z):
+def dg_dv(u, v, z):
     return (2 * v / muo * D(u, v, z) - v**2 / muo * Dv(u, v, z)) / (D(u, v, z)**2)
 
-def dG_dz(u, v, z):
+def dg_dz(u, v, z):
     return -v**2 / muo * Dz(u, v, z) / (D(u, v, z)**2)
+
+def F(u, v, z, f0, v0, g0, u0):
+    f_value = f(u, v, z)
+    g_value = g(u, v, z)
+    return (f_value - f0) * (v - v0) - (g_value - g0) * (u - u0)
+
+def G(u, v, z, f0, z0, u0, a, alpha):
+    f_value = f(u, v, z)
+    a_z = a(z)
+    a_z0 = a(z0)
+    return (f_value - f0) * (u0 * (z - z0) + alpha * (a_z - a_z0)) - f0 * (z - z0) * (u - u0)
+
+# Derivadas parciais de F e G
+def dF_du(u, v, z, f0, v0, g0, u0):
+    return df_du(u, v, z) * (v - v0) - dg_du(u, v, z) * (u - u0) - (g(u, v, z) - g0)
+
+def dF_dv(u, v, z, f0, v0, g0, u0):
+    return df_dv(u, v, z) * (v - v0) - dg_dv(u, v, z) * (u - u0) + (f(u, v, z) - f0)
+
+def dF_dz(u, v, z, f0, v0, g0, u0):
+    return df_dz(u, v, z) * (v - v0) - dg_dz(u, v, z) * (u - u0)
+
+def dG_du(u, v, z, f0, z0, u0, a, alpha):
+    return df_du(u, v, z) * (u0 * (z - z0) + alpha * (a(z) - a(z0))) - f0 * (z - z0) - dg_du(u, v, z) * (u - u0)
+
+def dG_dv(u, v, z, f0, z0, u0, a, alpha):
+    return df_dv(u, v, z) * (u0 * (z - z0) + alpha * (a(z) - a(z0))) - dg_dv(u, v, z) * (u - u0)
+
+def dG_dz(u, v, z, f0, z0, u0, a, alpha):
+    return df_dz(u, v, z) * (u0 * (z - z0) + alpha * (a(z) - a(z0))) + (f(u, v, z) - f0) * (u0 + alpha * a(z)) - f0 * (u - u0)
 
 # Adicionando o caso de transição
 def system_with_transition(s, y):
@@ -60,12 +92,12 @@ def system_with_transition(s, y):
     print(f"Transition system input: u={u}, v={v}, z={z}")
     try:
         # Calculando os determinantes
-        mat_uv = np.array([[dF_dv(u, v, z), dF_dz(u, v, z)],
-                           [dG_dv(u, v, z), dG_dz(u, v, z)]])
-        mat_uz = np.array([[dF_du(u, v, z), dF_dz(u, v, z)],
-                           [dG_du(u, v, z), dG_dz(u, v, z)]])
-        mat_vz = np.array([[dF_dv(u, v, z), dF_dz(u, v, z)],
-                           [dG_dv(u, v, z), dG_dz(u, v, z)]])
+        mat_uv = np.array([[dF_dv(u, v, z, f0, v0, g0, u0), dF_dz(u, v, z, f0, v0, g0, u0)],
+                           [dG_dv(u, v, z, f0, z0, u0, a, alpha), dG_dz(u, v, z, f0, z0, u0, a, alpha)]])
+        mat_uz = np.array([[dF_du(u, v, z, f0, v0, g0, u0), dF_dz(u, v, z, f0, v0, g0, u0)],
+                           [dG_du(u, v, z, f0, z0, u0, a, alpha), dG_dz(u, v, z, f0, z0, u0, a, alpha)]])
+        mat_vz = np.array([[dF_dv(u, v, z, f0, v0, g0, u0), dF_dz(u, v, z, f0, v0, g0, u0)],
+                           [dG_dv(u, v, z, f0, z0, u0, a, alpha), dG_dz(u, v, z, f0, z0, u0, a, alpha)]])
         
         if np.isnan(mat_uv).any() or np.isnan(mat_uz).any() or np.isnan(mat_vz).any():
             raise ValueError("Matrix contains NaN values.")
@@ -112,6 +144,9 @@ def system_with_transition(s, y):
 u0 = 0.4  # Exemplo
 v0 = 0.5  # Exemplo
 z0 = 0.3  # Exemplo
+f0 = f(u0, v0, z0)
+g0 = g(u0, v0, z0)
+alpha = 0.001  # Exemplo
 y0 = [u0, v0, z0]
 
 # Intervalo de integração
