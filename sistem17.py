@@ -3,7 +3,6 @@ from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-
 muw0 = 1.0  # Viscosidade inicial sem polimero
 muo = 4.0
 mug = 0.25
@@ -148,6 +147,7 @@ f0 = f(u0, v0, z0)
 g0 = g(u0, v0, z0)
 alpha = 0.001  # Exemplo
 y0 = [u0, v0, z0]
+y0 = [0.4, 0.5, 0.31]
 
 # Intervalo de integração
 s_span = (0, 1)

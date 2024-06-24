@@ -42,6 +42,9 @@ z = R * np.outer(np.ones(np.size(u)), np.cos(v))
 ax.plot_surface(x, y, z, color='b', alpha=0.3)
 
 # Superfície do plano
+xx, yy = np.meace(x, y, z, color='b', alpha=0.3)
+
+# Superfície do plano
 xx, yy = np.meshgrid(np.linspace(-1.5, 1.5, 100), np.linspace(-1.5, 1.5, 100))
 zz = (d - a*xx - b*yy) / c
 ax.plot_surface(xx, yy, zz, color='r', alpha=0.3)
