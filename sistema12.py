@@ -3,6 +3,7 @@ from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
+alpha = 10**-3
 # Funções dadas
 def muw(c):
     return 1.0 + c
@@ -56,22 +57,51 @@ def D_dc(u, v, c):
 def muwc(c):
     return 1.0
 
+def a(c):
+    return np.sqrt(c)
+
+def da_dc(c):
+    return 1.0 / (2*np.sqrt(c))    
+
+def lambdac(u,v,c):
+    return f(u, v, c)/ (u + alpha* da_dc(c))
+
+def detalpha(u, v, c):
+    return ((df_du(u, v, c)-lambdac(u,v,c)) * (dg_dv(u, v, c)-lambdac(u,v,c)) - df_dv(u,v,c) * dg_du(u, v, c))
+
+def det1(u, v, c):
+    return (df_dv(u, v, c) * dg_dc(u, v, c) - df_dc(u,v,c) * (dg_dv(u, v, c)-lambdac(u,v,c)))
+
+def det2(u,v,c):
+    return (df_dc(u,v,c) * dg_du(u,v,c) - (df_du(u,v,c)-lambdac(u,v,c)) * dg_dc(u,v,c))
+
+def p(u, v, c):
+    return det1(u,v,c)/detalpha(u,v,c)
+
+def q(u, v, c):
+    return det2(u,v,c)/detalpha(u,v,c)
+
+def N(u, v, c):
+    return np.sqrt( (p(u, v, c)**2) + (q(u, v, c)**2) + 1)
+
 # Sistema de EDOs
 def system(s, y):
-    u, v, z = y
-    p = (df_dc(u, v, z) - df_du(u, v, z) * g(u, v, z) + df_dv(u, v, z) * f(u, v, z)) / (df_dc(u, v, z) * g(u, v, z) - df_dv(u, v, z) * f(u, v, z))
-    q = (dg_dc(u, v, z) - dg_du(u, v, z) * g(u, v, z) + dg_dv(u, v, z) * f(u, v, z)) / (dg_dc(u, v, z) * g(u, v, z) - dg_dv(u, v, z) * f(u, v, z))
-    return [p, q, 1]
+    u, v, c = y
+    print(u,v,c)
+    eq1 = p(u, v, c)/N(u, v, c)
+    eq2 = q(u, v, c)/N(u, v, c)
+    eq3 = 1.0/N(u, v, c)
+    return [eq1, eq2, eq3]
 
 # Condições iniciais
-u0, v0, z0 = 0.4, 0.5, 0.3
-y0 = [u0, v0, z0]
+u0, v0, c0 = 0.1, 0.6, 0.2
+y0 = [u0, v0, c0]
 
 # Intervalo de integração
-s_span = (0, 1)
+t_span = (0,0.05)
 
 # Resolução do sistema
-sol = solve_ivp(system, s_span, y0, method='RK45', t_eval=np.linspace(0, 1, 100))
+sol = solve_ivp(system, t_span, y0, method='LSODA', t_eval=np.linspace(0,0.05,2))
 
 # Verificação dos resultados
 if sol.y.shape[0] != 3:
@@ -83,7 +113,7 @@ ax = fig.add_subplot(111, projection='3d')
 ax.plot(sol.y[0], sol.y[1], sol.y[2], label='Trajetória')
 ax.set_xlabel('u(s)')
 ax.set_ylabel('v(s)')
-ax.set_zlabel('z(s)')
+ax.set_zlabel('c(s)')
 ax.legend()
 plt.title('Solução do sistema de EDOs em 3D')
 plt.show()

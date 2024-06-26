@@ -130,9 +130,6 @@ def system_with_transition(s, y):
             du_ds = det_uv / det_uz
             dv_ds = -det_uz / det_vz
             dz_ds = 1
-    except ZeroDivisionError as e:
-        print(f"Exception: {e}")
-        du_ds, dv_ds, dz_ds = np.nan, np.nan, np.nan
     except ValueError as e:
         print(f"Exception: {e}")
         du_ds, dv_ds, dz_ds = np.nan, np.nan, np.nan
@@ -140,20 +137,21 @@ def system_with_transition(s, y):
     return [du_ds, dv_ds, dz_ds]
 
 # Condições iniciais
-u0 = 0.4  # Exemplo
-v0 = 0.5  # Exemplo
-z0 = 0.3  # Exemplo
+u0 = 0.1  # Exemplo
+v0 = 0.6  # Exemplo
+z0 = 0.2  # Exemplo
 f0 = f(u0, v0, z0)
 g0 = g(u0, v0, z0)
-alpha = 0.001  # Exemplo
+alpha = 10**-3  # Exemplo
 y0 = [u0, v0, z0]
-y0 = [0.4, 0.5, 0.31]
+
+y0 = [0.10010735741660978, 0.5999219526580091, 0.2215289621825406]
 
 # Intervalo de integração
-s_span = (0, 1)
+s_span = (0, 0.05)
 
 # Resolução do sistema
-sol = solve_ivp(system_with_transition, s_span, y0, method='RK45', t_eval=np.linspace(0, 1, 10))
+sol = solve_ivp(system_with_transition, s_span, y0, method='RK45', t_eval=np.linspace(0, 0.05, 2))
 
 # Verificação dos resultados
 if sol.y.shape[0] != 3:
