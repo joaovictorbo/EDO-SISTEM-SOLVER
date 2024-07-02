@@ -65,9 +65,9 @@ def DadosIntegracao() -> tuple[int, Real]:  # Para integracao dos contatos
     return (N, h)
 
 
-def ambiente3d() -> plt.Figure:
+def ambiente3d() -> plt.Axes:
     figure = plt.figure("PrismDomain")
-    axes = figure.gca(projection="3d")
+    axes = figure.add_subplot(111, projection='3d')
 
     return axes
 
