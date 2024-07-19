@@ -99,10 +99,10 @@ def umap(x, y, mp): #Funcao que faz o des-mapeamento do triangulo equilatero
 
 #Viscosidade da agua em funcao da concetracao do polimero   
 def muw(c): #Viscosidade da agua
-    return muw0 + c
+    return muw0 * 2**c
 
 def muwc(c): #dmuw/dc
-    return 1.0
+    return np.log(2) * muw0 * 2**c
 
 #Denominador (mobilidade total)
 def D(u,v,c): #Denominador
