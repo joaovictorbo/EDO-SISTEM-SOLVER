@@ -1,13 +1,17 @@
 import numpy as np
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 
 alpha = 10**-3
 
+muw0 = 1.0  # Viscosidade inicial sem polimero
+     
 # Funções dadas
-def muw(c):
-    return 1.0 + c
+def muw(c): #Viscosidade da agua
+    return muw0 * 2**c
+
+def muwc(c): #dmuw/dc
+    return np.log(2) * muw0 * 2**c
 
 def muo():
     return 4.0
@@ -95,14 +99,14 @@ def system(s, y):
     return [eq1, eq2, eq3]
 
 # Condições iniciais
-u0, v0, c0 = 0.1, 0.6, 0.2
+u0, v0, c0 = 0.4, 0.4, 0.2
 y0 = [u0, v0, c0]
 
 # Intervalo de integração
-t_span = (0,0.05)
+t_span = (0,1)
 
 # Resolução do sistema
-sol = solve_ivp(system, t_span, y0, method='LSODA', t_eval=np.linspace(0,0.05,2))
+sol = solve_ivp(system, t_span, y0, method='LSODA', t_eval=np.linspace(0,1,200000))
 
 # Verificação dos resultados
 if sol.y.shape[0] != 3:
