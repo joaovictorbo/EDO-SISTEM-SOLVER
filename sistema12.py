@@ -106,7 +106,7 @@ y0 = [u0, v0, c0]
 t_span = (0,1)
 
 # Resolução do sistema
-sol = solve_ivp(system, t_span, y0, method='LSODA', t_eval=np.linspace(0,1,200000))
+sol = solve_ivp(system, t_span, y0, method='LSODA', t_eval=np.linspace(0,1,2000))
 
 # Verificação dos resultados
 if sol.y.shape[0] != 3:
