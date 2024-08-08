@@ -79,57 +79,41 @@ def det2(u,v,c):
     return (df_dc(u,v,c) * dg_du(u,v,c) - (df_du(u,v,c)-lambdac(u,v,c)) * dg_dc(u,v,c))
 
 def p(u, v, c):
-    if detalpha(u, v, c) != 0:
-        return det1(u, v, c)
-    elif det1(u, v, c) != 0:
-        return 1
-    elif det2(u, v, c) != 0:
-        return det1(u, v, c)
-    else:
-        return None
-
+    return det1(u, v, c)
+#remover os if e deixar somente o if de ponto singular e a formula 16
 def q(u, v, c):
-    if detalpha(u, v, c) != 0:
-        return det2(u, v, c)
-    elif det1(u, v, c) != 0:
-        return det2(u, v, c)
-    elif det2(u, v, c) != 0:
-        return 1
-    else:
-        return None
+    return det2(u, v, c)
 
 def r(u, v, c):
-    if detalpha(u, v, c) != 0:
-        return 1
-    elif det1(u, v, c) != 0:
-        return 0
-    elif det2(u, v, c) != 0:
-        return detalpha(u,v,c) /det2(u, v, c) 
-    else:
-        return None  # Singular point
+    return detalpha(u, v, c)
 
+def N(u, v, c):
+    return np.sqrt(p(u, v, c)**2 + q(u, v, c)**2 + r(u, v, c)**2)
 # Sistema de EDOs
 def system(s, y):
     u, v, c = y
-    eq1 = p(u, v, c) / r(u, v, c) if r(u, v, c) else None
-    eq2 = q(u, v, c) / r(u, v, c) if r(u, v, c) else None
-    eq3 = 1.0 / r(u, v, c) if r(u, v, c) else None
+    eq1 = p(u, v, c) / N(u, v, c) if N(u, v, c) else None
+    eq2 = q(u, v, c) / N(u, v, c) if N(u, v, c) else None
+    eq3 = r(u,v,c) / N(u, v, c) if N(u, v, c) else None
     
     if eq1 is None or eq2 is None or eq3 is None:
         raise ValueError("Ponto singular do sistema de EDOs")
-    
+    # caso seja 0 retorna 0.01 A fazer
     return [eq1, eq2, eq3]
 
 # Condições iniciais
-u0, v0, c0 = 0.4, 0.4, 0.2
+u0, v0, c0 = 0.45, 0.47, 0.2
 y0 = [u0, v0, c0]
 
 # Intervalo de integração
-t_span = (0,1)
+t_span = (0,10)
 
 # Resolução do sistema
 sol = solve_ivp(system, t_span, y0, method='LSODA', t_eval=np.linspace(0,1,2000))
+t_span2 = (0,-10)
 
+# Resolução do sistema
+sol2 = solve_ivp(system, t_span2, y0, method='LSODA', t_eval2=np.linspace(0,-1,2000))
 # Verificação dos resultados
 if sol.y.shape[0] != 3:
     raise ValueError("A solução não retornou os valores esperados.")
@@ -138,6 +122,7 @@ if sol.y.shape[0] != 3:
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 ax.plot(sol.y[0], sol.y[1], sol.y[2], label='Trajetória')
+ax.plot(sol2.y[0], sol2.y[1], sol2.y[2], label='Trajetória2')
 ax.set_xlabel('u(s)')
 ax.set_ylabel('v(s)')
 ax.set_zlabel('c(s)')
