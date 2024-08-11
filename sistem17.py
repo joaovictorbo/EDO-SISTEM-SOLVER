@@ -84,56 +84,35 @@ def dG_dv(u, v, z, f0, z0, u0, a, alpha):
 
 def dG_dz(u, v, z, f0, z0, u0, a, alpha):
     return df_dz(u, v, z) * (u0 * (z - z0) + alpha * (a(z) - a(z0))) + (f(u, v, z) - f0) * (u0 + alpha * a(z)) - f0 * (u - u0)
+def det_z(u, v, z, f0, v0, g0, u0):
+    return np.linalg.det([
+        [dF_du(u, v, z, f0, v0, g0, u0), dF_dv(u, v, z, f0, v0, g0, u0)],
+        [dG_du(u, v, z, f0, z0, u0, a, alpha), dG_dv(u, v, z, f0, z0, u0, a, alpha)]
+    ])
 
-# Adicionando o caso de transição
-def system_with_transition(s, y):
+def det_v(u, v, z, f0, v0, g0, u0):
+    return np.linalg.det([
+        [dF_du(u, v, z, f0, v0, g0, u0), dF_dz(u, v, z, f0, v0, g0, u0)],
+        [dG_du(u, v, z, f0, z0, u0, a, alpha), dG_dz(u, v, z, f0, z0, u0, a, alpha)]
+    ])
+
+def det_u(u, v, z, f0, v0, g0, u0):
+    return np.linalg.det([
+        [dF_dv(u, v, z, f0, v0, g0, u0), dF_dz(u, v, z, f0, v0, g0, u0)],
+        [dG_dv(u, v, z, f0, z0, u0, a, alpha), dG_dz(u, v, z, f0, z0, u0, a, alpha)]
+    ])
+
+def system_with_determinants(s, y, f0, v0, g0, u0, z0, a, alpha):
     u, v, z = y
-    print(f"Transition system input: u={u}, v={v}, z={z}")
-    try:
-        # Calculando os determinantes
-        mat_uv = np.array([[dF_dv(u, v, z, f0, v0, g0, u0), dF_dz(u, v, z, f0, v0, g0, u0)],
-                           [dG_dv(u, v, z, f0, z0, u0, a, alpha), dG_dz(u, v, z, f0, z0, u0, a, alpha)]])
-        mat_uz = np.array([[dF_du(u, v, z, f0, v0, g0, u0), dF_dz(u, v, z, f0, v0, g0, u0)],
-                           [dG_du(u, v, z, f0, z0, u0, a, alpha), dG_dz(u, v, z, f0, z0, u0, a, alpha)]])
-        mat_vz = np.array([[dF_dv(u, v, z, f0, v0, g0, u0), dF_dz(u, v, z, f0, v0, g0, u0)],
-                           [dG_dv(u, v, z, f0, z0, u0, a, alpha), dG_dz(u, v, z, f0, z0, u0, a, alpha)]])
-        
-        if np.isnan(mat_uv).any() or np.isnan(mat_uz).any() or np.isnan(mat_vz).any():
-            raise ValueError("Matrix contains NaN values.")
-        
-        det_uv = np.linalg.det(mat_uv)
-        det_uz = np.linalg.det(mat_uz)
-        det_vz = np.linalg.det(mat_vz)
-        
-        if np.isclose(det_uv, 0):
-            # Transição para o sistema em (20)
-            dv_ds = 1
-            if np.isclose(det_vz, 0):
-                du_dv, dz_dv = np.nan, np.nan
-            else:
-                du_dv = -det_uz / det_vz
-                dz_dv = det_vz / det_uz
-            du_ds = du_dv * dv_ds
-            dz_ds = dz_dv * dv_ds
-        elif np.isclose(det_uz, 0):
-            # Transição para o sistema em (22)
-            if np.isclose(det_vz, 0):
-                dv_du, dz_du = np.nan, np.nan
-            else:
-                dv_du = -det_vz / det_uz
-                dz_du = det_uz / det_vz
-            du_ds = 1
-            dv_ds = dv_du * du_ds
-            dz_ds = dz_du * du_ds
-        else:
-            # Sistema original
-            du_ds = det_uv / det_uz
-            dv_ds = -det_uz / det_vz
-            dz_ds = 1
-    except ValueError as e:
-        print(f"Exception: {e}")
-        du_ds, dv_ds, dz_ds = np.nan, np.nan, np.nan
-    
+
+    det_u_value = det_u(u, v, z, f0, v0, g0, u0)
+    det_v_value = det_v(u, v, z, f0, v0, g0, u0)
+    det_z_value = det_z(u, v, z, f0, v0, g0, u0)
+
+    du_ds = det_u_value
+    dv_ds = -det_v_value
+    dz_ds = det_z_value
+
     return [du_ds, dv_ds, dz_ds]
 
 # Condições iniciais
