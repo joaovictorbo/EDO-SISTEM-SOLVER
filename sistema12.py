@@ -3,7 +3,6 @@ from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 
 alpha = 10**-3
-
 muw0 = 1.0  # Viscosidade inicial sem polimero
 
 # Funções dadas
@@ -23,14 +22,12 @@ def D(u, v, c):
     w = 1 - u - v
     return u**2 / muw(c) + v**2 / muo() + w**2 / mug()
 
-
 def f(u, v, c):
     return (u**2 / muw(c)) / D(u, v, c)
 
 def g(u, v, c):
     return (v**2 / muo()) / D(u, v, c)
 
-# Derivadas parciais de f e g
 def df_du(u, v, c):
     return (2 * u / muw(c) * D(u, v, c) - u**2 / muw(c) * D_du(u, v, c)) / (D(u, v, c)**2)
 
@@ -80,7 +77,7 @@ def det2(u,v,c):
 
 def p(u, v, c):
     return det1(u, v, c)
-#remover os if e deixar somente o if de ponto singular e a formula 16
+
 def q(u, v, c):
     return det2(u, v, c)
 
@@ -89,7 +86,7 @@ def r(u, v, c):
 
 def N(u, v, c):
     return np.sqrt(p(u, v, c)**2 + q(u, v, c)**2 + r(u, v, c)**2)
-# Sistema de EDOs
+
 def system(s, y):
     u, v, c = y
     eq1 = p(u, v, c) / N(u, v, c) if N(u, v, c) else None
@@ -98,31 +95,28 @@ def system(s, y):
     
     if eq1 is None or eq2 is None or eq3 is None:
         raise ValueError("Ponto singular do sistema de EDOs")
-    # caso seja 0 retorna 0.01 A fazer
     return [eq1, eq2, eq3]
 
-# Condições iniciais
-u0, v0, c0 = 0.45, 0.47, 0.2
+u0, v0, c0 = 0.45, 0.47, 0.9
 y0 = [u0, v0, c0]
-
-# Intervalo de integração
 t_span = (0,10)
-
-# Resolução do sistema
 sol = solve_ivp(system, t_span, y0, method='LSODA', t_eval=np.linspace(0,1,2000))
 t_span2 = (0,-10)
+sol2 = solve_ivp(system, t_span2, y0, method='LSODA', t_eval=np.linspace(0,-1,2000))
 
-# Resolução do sistema
-sol2 = solve_ivp(system, t_span2, y0, method='LSODA', t_eval2=np.linspace(0,-1,2000))
-# Verificação dos resultados
-if sol.y.shape[0] != 3:
-    raise ValueError("A solução não retornou os valores esperados.")
+# Função para verificar se um ponto está dentro do triângulo
+def dentro_do_triangulo(u, v, c):
+    return u >= 0 and v >= 0 and u + v <= 1 and 0 <= c <= 1
 
-# Plot dos resultados em 3D
+# Filtrar a solução para manter apenas os pontos dentro do triângulo
+indices_sol = [i for i in range(len(sol.y[0])) if dentro_do_triangulo(sol.y[0][i], sol.y[1][i], sol.y[2][i])]
+indices_sol2 = [i for i in range(len(sol2.y[0])) if dentro_do_triangulo(sol2.y[0][i], sol2.y[1][i], sol2.y[2][i])]
+
+# Plotar os resultados filtrados
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
-ax.plot(sol.y[0], sol.y[1], sol.y[2], label='Trajetória')
-ax.plot(sol2.y[0], sol2.y[1], sol2.y[2], label='Trajetória2')
+ax.plot(sol.y[0][indices_sol], sol.y[1][indices_sol], sol.y[2][indices_sol], label='Trajetória')
+ax.plot(sol2.y[0][indices_sol2], sol2.y[1][indices_sol2], sol2.y[2][indices_sol2], label='Trajetória2')
 ax.set_xlabel('u(s)')
 ax.set_ylabel('v(s)')
 ax.set_zlabel('c(s)')
