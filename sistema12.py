@@ -100,23 +100,56 @@ def system(s, y):
 u0, v0, c0 = 0.45, 0.47, 0.9
 y0 = [u0, v0, c0]
 t_span = (0,10)
-sol = solve_ivp(system, t_span, y0, method='LSODA', t_eval=np.linspace(0,1,2000))
+sol = solve_ivp(system, t_span, y0, method='LSODA', t_eval=np.linspace(0,10,2000))
 t_span2 = (0,-10)
-sol2 = solve_ivp(system, t_span2, y0, method='LSODA', t_eval=np.linspace(0,-1,2000))
+sol2 = solve_ivp(system, t_span2, y0, method='LSODA', t_eval=np.linspace(0,-10,2000))
 
 # Função para verificar se um ponto está dentro do triângulo
 def dentro_do_triangulo(u, v, c):
     return u >= 0 and v >= 0 and u + v <= 1 and 0 <= c <= 1
 
-# Filtrar a solução para manter apenas os pontos dentro do triângulo
-indices_sol = [i for i in range(len(sol.y[0])) if dentro_do_triangulo(sol.y[0][i], sol.y[1][i], sol.y[2][i])]
-indices_sol2 = [i for i in range(len(sol2.y[0])) if dentro_do_triangulo(sol2.y[0][i], sol2.y[1][i], sol2.y[2][i])]
+# Função para dividir as trajetórias ao entrar e sair do triângulo
+def dividir_trajetorias(sol):
+    trajetorias = []
+    traj_atual = []
+    dentro = False
+    
+    for i in range(len(sol.y[0])):
+        u, v, c = sol.y[0][i], sol.y[1][i], sol.y[2][i]
+        if dentro_do_triangulo(u, v, c):
+            if not dentro:
+                if traj_atual:
+                    trajetorias.append(traj_atual)
+                traj_atual = []
+            dentro = True
+            traj_atual.append([u, v, c])
+        else:
+            if dentro:
+                trajetorias.append(traj_atual)
+                traj_atual = []
+            dentro = False
+    
+    if traj_atual:
+        trajetorias.append(traj_atual)
+    
+    return trajetorias
 
-# Plotar os resultados filtrados
+# Dividir as trajetórias
+trajetorias1 = dividir_trajetorias(sol)
+trajetorias2 = dividir_trajetorias(sol2)
+
+# Plotar as trajetórias divididas
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
-ax.plot(sol.y[0][indices_sol], sol.y[1][indices_sol], sol.y[2][indices_sol], label='Trajetória')
-ax.plot(sol2.y[0][indices_sol2], sol2.y[1][indices_sol2], sol2.y[2][indices_sol2], label='Trajetória2')
+
+for traj in trajetorias1:
+    traj = np.array(traj)
+    ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], label='Trajetória')
+
+for traj in trajetorias2:
+    traj = np.array(traj)
+    ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], label='Trajetória2')
+
 ax.set_xlabel('u(s)')
 ax.set_ylabel('v(s)')
 ax.set_zlabel('c(s)')
