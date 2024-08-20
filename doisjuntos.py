@@ -215,5 +215,8 @@ edges = [
 for edge in edges:
     ax.plot(*zip(*edge), color='black')
 
+ax.scatter(u0, v0, z0, color='red', s=10, label='Ponto Inicial', edgecolor='black')
+
+
 plt.title('Solução dos sistemas de EDOs em 3D')
 plt.show()
