@@ -122,6 +122,8 @@ alpha = 10**-3
 # Soluções para o primeiro sistema
 getinicialvalues = solve_ivp(system, (0, 0.5), [u0, v0, z0], method='LSODA', t_eval=np.linspace(0, 0.5, 4))
 u1, v1, z1 = getinicialvalues.y[:, -1]
+print(u0, v0, z0)
+print(u1, v1, z1)
 y1 = [u1, v1, z1]
 s_span = (0, 10)
 sol1 = solve_ivp(system_with_determinants, s_span, y1, method='LSODA', t_eval=np.linspace(0, 10, 2000))
@@ -173,22 +175,21 @@ trajetorias4 = dividir_trajetorias(sol4)
 # Plotar as trajetórias divididas
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
-
 for traj in trajetorias1:
     traj = np.array(traj)
-    ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], label='Sistema 1 - Forward')
+    ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], label='Sistema 1 - Forward', color='blue')
 
 for traj in trajetorias2:
     traj = np.array(traj)
-    ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], label='Sistema 1 - Backward')
+    ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], label='Sistema 1 - Backward', color='blue')
 
 for traj in trajetorias3:
     traj = np.array(traj)
-    ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], label='Sistema 2 - Forward')
+    ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], label='Sistema 2 - Forward', color='red')
 
 for traj in trajetorias4:
     traj = np.array(traj)
-    ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], label='Sistema 2 - Backward')
+    ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], label='Sistema 2 - Backward', color='red')
 
 ax.set_xlabel('u(s)')
 ax.set_ylabel('v(s)')

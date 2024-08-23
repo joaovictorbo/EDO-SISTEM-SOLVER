@@ -3,7 +3,7 @@ from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 from system import system
 
-u0, v0, c0 = 0.45, 0.47, 0.9
+u0, v0, c0 = 0.1, 0.4, 0.1
 y0 = [u0, v0, c0]
 t_span = (0,10)
 sol = solve_ivp(system, t_span, y0, method='LSODA', t_eval=np.linspace(0,10,2000))
@@ -80,6 +80,7 @@ edges = [
 
 for edge in edges:
     ax.plot(*zip(*edge), color='black')
+ax.scatter(u0, v0, c0, color='red', s=10, label='Ponto Inicial', edgecolor='black')
 
 plt.title('Solução do sistema de EDOs em 3D')
 plt.show()

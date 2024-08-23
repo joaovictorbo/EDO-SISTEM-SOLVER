@@ -88,10 +88,10 @@ def N(u, v, c):
     return np.sqrt(p(u, v, c)**2 + q(u, v, c)**2 + r(u, v, c)**2)
 def system(s, y):
     u, v, c = y
+    print(u, v, c)
     eq1 = p(u, v, c) / N(u, v, c) if N(u, v, c) else None
     eq2 = q(u, v, c) / N(u, v, c) if N(u, v, c) else None
     eq3 = r(u,v,c) / N(u, v, c) if N(u, v, c) else None
-    
     if eq1 is None or eq2 is None or eq3 is None:
         raise ValueError("Ponto singular do sistema de EDOs")
     return [eq1, eq2, eq3]

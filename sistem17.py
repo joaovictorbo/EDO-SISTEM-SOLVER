@@ -113,14 +113,14 @@ def system_with_determinants(s, y):
     return [du_ds, dv_ds, dz_ds]
 
 # Condições iniciais
-u0 = 0.45  # Exemplo0.45, 0.47, 0.9
-v0 = 0.47  # Exemplo
-z0 = 0.9  # Exemplo
+u0 = 0.1  # Exemplo0.45, 0.47, 0.9
+v0 = 0.4  # Exemplo
+z0 = 0.1  # Exemplo
 f0 = f(u0, v0, z0)
 g0 = g(u0, v0, z0)
 alpha = 10**-3  # Exemplo
 
-getinicialvalues = solve_ivp(system, (0,0.5), [u0, v0, z0], method='LSODA', t_eval=np.linspace(0, 0.5, 4))
+getinicialvalues = solve_ivp(system, (0,0.2), [u0, v0, z0], method='LSODA', t_eval=np.linspace(0,0.2, 8))
 u1, v1, z1 = getinicialvalues.y[:, -1]
 y1 = [u1, v1, z1]
 # Intervalo de integração
@@ -199,6 +199,7 @@ edges = [
 
 for edge in edges:
     ax.plot(*zip(*edge), color='black')
+ax.scatter(u0, v0, z0, color='red', s=10, label='Ponto Inicial', edgecolor='black')
 
 plt.title('Solução do sistema de EDOs em 3D')
 plt.show()
