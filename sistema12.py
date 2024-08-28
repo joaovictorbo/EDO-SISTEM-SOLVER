@@ -83,4 +83,7 @@ for edge in edges:
 ax.scatter(u0, v0, c0, color='red', s=10, label='Ponto Inicial', edgecolor='black')
 
 plt.title('Solução do sistema de EDOs em 3D')
+figura = plt.figure("Trajetórias")
+axes = figura.gca()
 plt.show()
+

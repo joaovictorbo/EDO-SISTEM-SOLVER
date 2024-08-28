@@ -58,10 +58,10 @@ def D_dc(u, v, c):
     return -u**2 * muwc(c) / muw(c)**2
 
 def a(c):
-    return np.sqrt(c)
+    return np.sin(c)
 
 def da_dc(c):
-    return 1.0 / (2*np.sqrt(c))    
+    return np.cos(c)  
 
 def lambdac(u,v,c):
     return f(u, v, c)/ (u + alpha* da_dc(c))

@@ -30,9 +30,9 @@ def D(u, v, c): # Denominador
     return u**2 / muw(c) + v**2 / muo + w**2 / mug
 
 def a(z):
-    return np.sqrt(z)
+    return np.sin(z)
 def da_dz(z):
-    return 1 / (2 * np.sqrt(z))
+    return np.cos(z)
 
 # Definição das funções f e g
 def f(u, v, z):
@@ -81,31 +81,31 @@ def dF_dv(u, v, z, f0, v0, g0, u0):
 def dF_dz(u, v, z, f0, v0, g0, u0):
     return df_dz(u, v, z) * (v - v0) - dg_dz(u, v, z) * (u - u0)
 
-def dG_du(u, v, z, f0, z0, u0, a, alpha):
-    return df_du(u, v, z) * (u0 * (z - z0) + (alpha * (a(z) - a(z0))))
+def dG_du(u, v, z, f0, z0, u0, alpha):
+    return df_du(u, v, z) * (u0 * (z - z0) + alpha * (a(z) - a(z0)))- f0 * (z - z0)
 
-def dG_dv(u, v, z, f0, z0, u0, a, alpha):
-    return df_dv(u, v, z) * ((u0 * (z - z0)) + (alpha * (a(z) - a(z0)))) - (dg_dv(u, v, z) * (u - u0))
+def dG_dv(u, v, z, f0, z0, u0, alpha):
+    return df_dv(u, v, z) * (u0 * (z - z0) + alpha * (a(z) - a(z0))) 
 
-def dG_dz(u, v, z, f0, z0, u0, a, alpha):
-    return df_dz(u, v, z) * ((u0 * (z - z0)) + (alpha * (a(z) - a(z0)))) + (f(u, v, z) - f0) * (u0 + (alpha * da_dz(z))) - (f0 * (u - u0))
+def dG_dz(u, v, z, f0, z0, u0 , alpha):
+    return df_dz(u, v, z) * (u0 * (z - z0) + alpha * (a(z) - a(z0))) + (f(u, v, z) - f0) * (u0 + alpha * da_dz(z)) - (f0 * (u - u0))
 
 def det_z(u, v, z):
     return np.linalg.det([
         [dF_du(u, v, z, f0, v0, g0, u0), dF_dv(u, v, z, f0, v0, g0, u0)],
-        [dG_du(u, v, z, f0, z0, u0, a, alpha), dG_dv(u, v, z, f0, z0, u0, a, alpha)]
+        [dG_du(u, v, z, f0, z0, u0, alpha), dG_dv(u, v, z, f0, z0, u0, alpha)]
     ])
 
 def det_v(u, v, z):
     return np.linalg.det([
         [dF_du(u, v, z, f0, v0, g0, u0), dF_dz(u, v, z, f0, v0, g0, u0)],
-        [dG_du(u, v, z, f0, z0, u0, a, alpha), dG_dz(u, v, z, f0, z0, u0, a, alpha)]
+        [dG_du(u, v, z, f0, z0, u0, alpha), dG_dz(u, v, z, f0, z0, u0, alpha)]
     ])
 
 def det_u(u, v, z):
     return np.linalg.det([
         [dF_dv(u, v, z, f0, v0, g0, u0), dF_dz(u, v, z, f0, v0, g0, u0)],
-        [dG_dv(u, v, z, f0, z0, u0, a, alpha), dG_dz(u, v, z, f0, z0, u0, a, alpha)]
+        [dG_dv(u, v, z, f0, z0, u0, alpha), dG_dz(u, v, z, f0, z0, u0, alpha)]
     ])
 
 def system_with_determinants(s, y):
@@ -118,18 +118,18 @@ def system_with_determinants(s, y):
 
 # Condições iniciais
 u0 = 0.5
-v0 = 0.4
-z0 = 0.8
+v0 = 0.2
+z0 = 0.3
 f0 = f(u0, v0, z0)
 g0 = g(u0, v0, z0)
 alpha = 10**-3
 
-# Integração para obter os valores iniciais positivos e negativos
-getinicialvalues = solve_ivp(system, (0, 0.2), [u0, v0, z0], method='LSODA', t_eval=np.linspace(0, 0.1, 4))
+
+getinicialvalues = solve_ivp(system, (0, 0.1), [u0, v0, z0], method='LSODA', t_eval=np.linspace(0, 0.1, 8))
 u1, v1, z1 = getinicialvalues.y[:, -1]
 y1 = [u1, v1, z1]
 
-getinicialvaluesneg = solve_ivp(system, (0, -0.2), [u0, v0, z0], method='LSODA', t_eval=np.linspace(0, -0.1, 4))
+getinicialvaluesneg = solve_ivp(system, (0, -0.1), [u0, v0, z0], method='LSODA', t_eval=np.linspace(0, -0.1, 8))
 u1neg, v1neg, z1neg = getinicialvaluesneg.y[:, -1]
 y1neg = [u1neg, v1neg, z1neg]
 
@@ -138,22 +138,21 @@ s_span = (0, 10)
 s_span2 = (0, -10)
 
 # Integração do sistema com determinantes
-sol = solve_ivp(system_with_determinants, s_span, y1, method='LSODA', t_eval=np.linspace(0, 10, 2000))
+sol = solve_ivp(system_with_determinants, s_span, y1, method='LSODA', t_eval=np.linspace(0, 0.5, 2000))
 getinicialvalues.y = np.hstack((getinicialvalues.y, sol.y))
 
-sol2 = solve_ivp(system_with_determinants, s_span2, y1neg, method='LSODA', t_eval=np.linspace(0, -10, 2000))
+sol2 = solve_ivp(system_with_determinants, s_span2, y1neg, method='LSODA', t_eval=np.linspace(0, -0.5, 2000))
 getinicialvaluesneg.y = np.hstack((getinicialvaluesneg.y, sol2.y))
 
 t_span = (0,10)
-sol3 = solve_ivp(system, t_span, [u0, v0, z0], method='LSODA', t_eval=np.linspace(0,10,2000))
+sol3 = solve_ivp(system, t_span, [u0, v0, z0], method='RK45', t_eval=np.linspace(0,10,2000))
 t_span2 = (0,-10)
-sol4 = solve_ivp(system, t_span2, [u0, v0, z0], method='LSODA', t_eval=np.linspace(0,-10,2000))
+sol4 = solve_ivp(system, t_span2, [u0, v0, z0], method='RK45', t_eval=np.linspace(0,-10,2000))
 
 # Função para verificar se um ponto está dentro do triângulo
 def dentro_do_triangulo(u, v, c):
     return u >= 0 and v >= 0 and u + v <= 1 and 0 <= c <= 1
 
-# Função para dividir as trajetórias ao entrar e sair do triângulo
 def dividir_trajetorias(sol):
     trajetorias = []
     traj_atual = []
@@ -161,6 +160,11 @@ def dividir_trajetorias(sol):
     
     for i in range(len(sol[0])):
         u, v, c = sol[0][i], sol[1][i], sol[2][i]
+        
+        # Parar a coleta de pontos se z for menor que 0
+        if c < 0:
+            break
+        
         if dentro_do_triangulo(u, v, c):
             if not dentro:
                 if traj_atual:
@@ -180,7 +184,7 @@ def dividir_trajetorias(sol):
     return trajetorias
 
 # Dividir as trajetórias
-trajetorias1 = dividir_trajetorias(getinicialvalues.y)
+trajetoria1 = dividir_trajetorias(getinicialvalues.y)
 trajetorias2 = dividir_trajetorias(getinicialvaluesneg.y)
 trajetorias3 = dividir_trajetorias(sol3.y)
 trajetorias4 = dividir_trajetorias(sol4.y)
@@ -189,19 +193,18 @@ trajetorias4 = dividir_trajetorias(sol4.y)
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 
-for traj in trajetorias1:
+for traj in trajetoria1:
     traj = np.array(traj)
     ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], color="red")
-
-for traj in trajetorias2:
-    traj = np.array(traj)
-    ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], color="red")
+# for traj in trajetorias2:
+#     traj = np.array(traj)
+#     ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], color="red")
 for traj in trajetorias3:
     traj = np.array(traj)
     ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], color="blue")
-for traj in trajetorias4:
-    traj = np.array(traj)
-    ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], color="blue")
+# for traj in trajetorias4:
+#     traj = np.array(traj)
+#     ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], color="blue")
 
 
 ax.set_xlabel('u(s)')
