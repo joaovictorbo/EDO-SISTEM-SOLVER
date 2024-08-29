@@ -30,9 +30,9 @@ def D(u, v, c): # Denominador
     return u**2 / muw(c) + v**2 / muo + w**2 / mug
 
 def a(z):
-    return np.sin(z)
+    return np.sqrt(z)
 def da_dz(z):
-    return np.cos(z)
+    return 0.5 / np.sqrt(z)
 
 # Definição das funções f e g
 def f(u, v, z):
@@ -117,17 +117,17 @@ def system_with_determinants(s, y):
     return [du_ds, dv_ds, dz_ds]
 
 # Condições iniciais
-u0 = 0.5
+u0 = 0.2
 v0 = 0.4
-z0 = 0.8
+z0 = 0.2
 f0 = f(u0, v0, z0)
 g0 = g(u0, v0, z0)
 alpha = 10**-3
 
 
-# getinicialvalues = solve_ivp(system, (0, 0.1), [u0, v0, z0], method='LSODA', t_eval=np.linspace(0, 0.1, 2))
-# u1, v1, z1 = getinicialvalues.y[:, -1]
-# y1 = [u1, v1, z1]
+getinicialvalues = solve_ivp(system, (0, 0.1), [u0, v0, z0], method='LSODA', t_eval=np.linspace(0, 0.1, 2))
+u1, v1, z1 = getinicialvalues.y[:, -1]
+y1 = [u1, v1, z1]
 
 getinicialvaluesneg = solve_ivp(system, (0, -0.1), [u0, v0, z0], method='LSODA', t_eval=np.linspace(0, -0.1, 8))
 u1neg, v1neg, z1neg = getinicialvaluesneg.y[:, -1]
@@ -138,8 +138,8 @@ s_span = (0, 10)
 s_span2 = (0, -10)
 
 # Integração do sistema com determinantes
-# sol = solve_ivp(system_with_determinants, s_span, y1, method='LSODA', t_eval=np.linspace(0, 10, 2000))
-# getinicialvalues.y = np.hstack((getinicialvalues.y, sol.y))
+sol = solve_ivp(system_with_determinants, s_span, y1, method='LSODA', t_eval=np.linspace(0, 10, 2000))
+getinicialvalues.y = np.hstack((getinicialvalues.y, sol.y))
 
 sol2 = solve_ivp(system_with_determinants, s_span2, y1neg, method='LSODA', t_eval=np.linspace(0, -10, 2000))
 getinicialvaluesneg.y = np.hstack((getinicialvaluesneg.y, sol2.y))
@@ -181,16 +181,16 @@ def dividir_trajetorias(sol):
 
 
 # Dividir as trajetórias
-# trajetorias1 = dividir_trajetorias(getinicialvalues.y)
+trajetorias1 = dividir_trajetorias(getinicialvalues.y)
 trajetorias2 = dividir_trajetorias(getinicialvaluesneg.y)
 
 # Plotar as trajetórias divididas
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 
-# for traj in trajetorias1:
-#     traj = np.array(traj)
-#     ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], label='Trajetória Positiva')
+for traj in trajetorias1:
+    traj = np.array(traj)
+    ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], label='Trajetória Positiva')
 
 for traj in trajetorias2:
     traj = np.array(traj)
@@ -222,5 +222,5 @@ for edge in edges:
     ax.plot(*zip(*edge), color='black')
 ax.scatter(u0, v0, z0, color='red', s=10, label='Ponto Inicial', edgecolor='black')
 
-plt.title('Solução do sistema de EDOs em 3D')
+plt.title('Solução do sistema 40')
 plt.show()

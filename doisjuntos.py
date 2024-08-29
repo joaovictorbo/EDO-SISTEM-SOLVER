@@ -117,9 +117,9 @@ def system_with_determinants(s, y):
     return [du_ds, dv_ds, dz_ds]
 
 # Condições iniciais
-u0 = 0.5
-v0 = 0.2
-z0 = 0.3
+u0 = 0.4
+v0 = 0.5
+z0 = 0.7
 f0 = f(u0, v0, z0)
 g0 = g(u0, v0, z0)
 alpha = 10**-3
@@ -196,15 +196,15 @@ ax = fig.add_subplot(111, projection='3d')
 for traj in trajetoria1:
     traj = np.array(traj)
     ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], color="red")
-# for traj in trajetorias2:
-#     traj = np.array(traj)
-#     ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], color="red")
+for traj in trajetorias2:
+    traj = np.array(traj)
+    ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], color="red")
 for traj in trajetorias3:
     traj = np.array(traj)
     ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], color="blue")
-# for traj in trajetorias4:
-#     traj = np.array(traj)
-#     ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], color="blue")
+for traj in trajetorias4:
+    traj = np.array(traj)
+    ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], color="blue")
 
 
 ax.set_xlabel('u(s)')
