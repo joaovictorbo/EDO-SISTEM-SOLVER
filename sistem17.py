@@ -117,8 +117,8 @@ def system_with_determinants(s, y):
     return [du_ds, dv_ds, dz_ds]
 
 # Condições iniciais
-u0 = 0.2
-v0 = 0.4
+u0 = 0.1
+v0 = 0.6
 z0 = 0.2
 f0 = f(u0, v0, z0)
 g0 = g(u0, v0, z0)
@@ -222,5 +222,4 @@ for edge in edges:
     ax.plot(*zip(*edge), color='black')
 ax.scatter(u0, v0, z0, color='red', s=10, label='Ponto Inicial', edgecolor='black')
 
-plt.title('Solução do sistema 40')
 plt.show()
