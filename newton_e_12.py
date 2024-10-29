@@ -1,10 +1,14 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
-from system import system
+import matplotlib.pyplot as plt
+import system
 
-alpha = 10**-3
-muw0 = 1.0  # Viscosidade inicial sem polimero
+def muo():
+    return 4.0
+
+def mug():
+    return 0.25
+
 
 # Funções dadas
 def muw(c):  # Viscosidade da agua
@@ -111,13 +115,6 @@ def r(u, v, c):
 
 def N(u, v, c):
     return np.sqrt(p(u, v, c)**2 + q(u, v, c)**2 + r(u, v, c)**2)
-# Condições iniciais
-u0 = 0.3
-v0 = 0.6
-z0 = 0.4
-f0 = f(u0, v0, z0)
-g0 = g(u0, v0, z0)
-alpha = 10**-3
 
 def F(u, v, z):
     f_value = f(u, v, z)
@@ -130,9 +127,28 @@ def G(u, v, z):
     a_z0 = a(z0)
     return (f_value - f0) * (u0 * (z - z0) + alpha * (a_z - a_z0)) - f0 * (z - z0) * (u - u0)
 
+
+
+
+
+alpha = 10**-3
+muw0 = 1.0  # Viscosidade inicial sem polimero
+u0 = 0.1
+v0 = 0.6
+z0 = 0.2
+alpha = 10**-3
+def f(u, v, c):
+    return (u**2 / muw(c)) / D(u, v, c)
+
+def g(u, v, c):
+    return (v**2 / muo()) / D(u, v, c)
+
+f0 = f(u0, v0, z0)
+g0 = g(u0, v0, z0)
+
+
 # Cálculo numérico da Jacobiana ∂(F,G)/∂(u,v)
 def compute_jacobian(u, v, c, h=1e-6):
-    # Derivadas parciais de F e G calcular pelo sistema 17 (sistema17.py)
     F_u = (F(u + h, v, c) - F(u - h, v, c)) / (2*h)
     F_v = (F(u, v + h, c) - F(u, v - h, c)) / (2*h)
     G_u = (G(u + h, v, c) - G(u - h, v, c)) / (2*h)
@@ -141,28 +157,21 @@ def compute_jacobian(u, v, c, h=1e-6):
                   [G_u, G_v]])
     return J
 
-# Método de Newton para correção de (u, v) com c congelado
-def newton_correction(u0, v0, c_prev, iterations=3):
+def newton_correction(u0, v0, c_fixed, iterations=3):
     u = u0
     v = v0
     for i in range(iterations):
-        B = np.array([F(u, v, c_prev), G(u, v, c_prev)])
-        J = compute_jacobian(u, v, c_prev)
+        B = np.array([F(u, v, c_fixed), G(u, v, c_fixed)])
+        J = compute_jacobian(u, v, c_fixed)
         try:
             S = np.linalg.solve(J, -B)
         except np.linalg.LinAlgError:
             print("Jacobiana singular na iteração", i)
             break
-        print(S)
         u += S[0]
         v += S[1]
     return u, v
 
-# Função para verificar se um ponto está dentro do triângulo
-def dentro_do_triangulo(u, v, c):
-    return u >= 0 and v >= 0 and u + v <= 1 and 0 <= c <= 1
-
-# Função para dividir as trajetórias ao entrar e sair do triângulo
 def dividir_trajetorias(trajetoria):
     trajetorias = []
     traj_atual = []
@@ -188,54 +197,68 @@ def dividir_trajetorias(trajetoria):
 
     return trajetorias
 
-# Parâmetros iniciais
-y0 = [u0, v0, z0]
+def dentro_do_triangulo(u, v, c):
+    return u >= 0 and v >= 0 and u + v <= 1 and 0 <= c <= 1
 
-# Passo pequeno
+# Inicialização para o primeiro sistema
+u0, v0, c0 = 0.1, 0.6, 0.2
 step_size = 0.01
-# Parametro da curva de Hugoniot (s) como u(s) v(s) c(s)
-s_values = np.arange(0, step_size*1000, step_size)
+s_values = np.arange(0, 10, step_size)
 
-# Listas para armazenar as trajetórias
-trajectory = []
-trajectory.append([u0, v0, z0])
-
-# Loop para gerar a curva de Hugoniot usando o método de Newton
+trajectory = [[u0, v0, c0]]
 for s in s_values[1:]:
-    # Últimos valores de u, v, c
-    y_0 = trajectory[-1]
+    u_prev, v_prev, c_prev = trajectory[-1]
+    c_fixed = c_prev
+    u_new, v_new = newton_correction(u_prev, v_prev, c_fixed)
 
-    t_span = (s, s + step_size)
-    sol = solve_ivp(system, t_span, y_0, method='LSODA', t_eval=np.linspace(s,s + step_size,2))
-    u_prev, v_prev, c_prev = sol.y[:, -1]
+    N_val = N(u_new, v_new, c_fixed)
+    if N_val == 0:
+        break
+    du_ds = p(u_new, v_new, c_fixed) / N_val
+    dv_ds = q(u_new, v_new, c_fixed) / N_val
+    dc_ds = r(u_new, v_new, c_fixed) / N_val
 
-    # Aplica o método de Newton para corrigir u e v
-    u_new, v_new = newton_correction(u_prev, v_prev, c_prev)
+    c_new = c_fixed + dc_ds * step_size
+    trajectory.append([u_new, v_new, c_new])
 
-    # Armazena os novos valores
-    # c_new = c_prev, c_prev é atualizado no sistema 12
-    trajectory.append([u_new, v_new, c_prev])
-
-# Converte a trajetória em array numpy
 trajectory = np.array(trajectory)
-
-# Dividir as trajetórias
 trajetorias_divididas = dividir_trajetorias(trajectory)
 
-# Plotagem das trajetórias divididas
+# Inicialização para o segundo sistema
+u0, v0, c0 = 0.1, 0.6, 0.3
+y0 = [u0, v0, c0]
+t_span = (0, 10)
+sol = solve_ivp(system, t_span, y0, method='LSODA', t_eval=np.linspace(0, 10, 2000))
+t_span2 = (0, -10)
+sol2 = solve_ivp(system, t_span2, y0, method='LSODA', t_eval=np.linspace(0, -10, 2000))
+
+trajetorias1 = dividir_trajetorias(np.column_stack((sol.y[0], sol.y[1], sol.y[2])))
+trajetorias2 = dividir_trajetorias(np.column_stack((sol2.y[0], sol2.y[1], sol2.y[2])))
+
+# Plotagem das trajetórias
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 
+# Primeiro sistema (trajetória com método de Newton)
 for traj in trajetorias_divididas:
     traj = np.array(traj)
-    ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], label='Trajetória')
+    ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], color='blue', label='Trajetória Sistema 1')
+
+# Segundo sistema (ODE solver)
+for traj in trajetorias1:
+    traj = np.array(traj)
+    ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], color='green', label='Trajetória Sistema 2')
+
+for traj in trajetorias2:
+    traj = np.array(traj)
+    ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], color='red', label='Trajetória Reversa Sistema 2')
 
 ax.set_xlabel('u(s)')
 ax.set_ylabel('v(s)')
 ax.set_zlabel('c(s)')
 ax.legend()
 
-# Adicionar o triângulo que vai de c=0 a c=1
+# Adicionar triângulo
 vertices = np.array([
     [0, 0, 0], [1, 0, 0], [0, 1, 0],
     [0, 0, 1], [1, 0, 1], [0, 1, 1]
@@ -254,39 +277,6 @@ edges = [
 
 for edge in edges:
     ax.plot(*zip(*edge), color='black')
-ax.scatter(u0, v0, z0, color='red', s=50, label='Ponto Inicial', edgecolor='black')
-# Passo pequeno para trajetória reversa
-s_values_rev = np.arange(0, -step_size*1000, -step_size)
-
-# Listas para armazenar as trajetórias reversas
-trajectory_rev = []
-trajectory_rev.append([u0, v0, z0])
-
-# Loop para gerar a curva de Hugoniot reversa
-for s in s_values_rev[1:]:
-    # Últimos valores de u, v, c
-    y_0 = trajectory_rev[-1]
-    t_span = (s, s - step_size)
-    sol = solve_ivp(system, t_span, y_0, method='LSODA', t_eval=np.linspace(s,s - step_size,2))
-    u_prev, v_prev, c_prev = sol.y[:, -1]
-
-    # Aplica o método de Newton para corrigir u e v
-    u_new, v_new = newton_correction(u_prev, v_prev, c_prev)
-
-
-    # Armazena os novos valores
-    # c_new = c_prev, c_prev é atualizado no sistema 12
-    trajectory_rev.append([u_new, v_new, c_prev])
-
-# Converte a trajetória reversa em array numpy
-trajectory_rev = np.array(trajectory_rev)
-
-# Dividir as trajetórias reversas
-trajetorias_divididas_rev = dividir_trajetorias(trajectory_rev)
-
-# Plotar as trajetórias reversas
-for traj in trajetorias_divididas_rev:
-    traj = np.array(traj)
-    ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], label='Trajetória Reversa')
+ax.scatter(u0, v0, c0, color='orange', s=50, label='Ponto Inicial', edgecolor='black')
 
 plt.show()

@@ -3,7 +3,7 @@ from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 from system import system
 
-u0, v0, c0 = 0.1,0.6, 0.2
+u0, v0, c0 = 0.3,0.6, 0.4
 y0 = [u0, v0, c0]
 t_span = (0,10)
 sol = solve_ivp(system, t_span, y0, method='LSODA', t_eval=np.linspace(0,10,2000))
