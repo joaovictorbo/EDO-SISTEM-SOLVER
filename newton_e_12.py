@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
-import system
+import sistemamodular.system as system
 
 def muo():
     return 4.0

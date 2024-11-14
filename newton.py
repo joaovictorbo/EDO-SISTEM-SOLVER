@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
-from system import system
+from sistemamodular.system import system
 
 alpha = 10**-3
 muw0 = 1.0  # Viscosidade inicial sem polimero

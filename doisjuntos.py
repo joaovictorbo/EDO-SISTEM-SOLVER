@@ -2,7 +2,7 @@ import numpy as np
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from system import system
+from sistemamodular.system import system
 
 muw0 = 1.0  # Viscosidade inicial sem polimero
 muo = 4.0

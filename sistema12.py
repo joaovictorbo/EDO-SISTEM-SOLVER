@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
-from system import system
+from sistemamodular.system import system
 
 u0, v0, c0 = 0.3,0.6, 0.4
 y0 = [u0, v0, c0]
