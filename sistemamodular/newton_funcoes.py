@@ -65,6 +65,7 @@ def resolver_trajetoria(u0, v0, c0, t_span=(0, 10), t_span2=(0, -10)):
     Retorna:
         sol, sol2: Soluções para a trajetória positiva e negativa.
     """
+    # Corrigir ponto a ponto A fazer a correção de Newton
     y0 = [u0, v0, c0]
     sol = solve_ivp(system, t_span, y0, method='LSODA', t_eval=np.linspace(t_span[0], t_span[1], 2000))
     sol2 = solve_ivp(system, t_span2, y0, method='LSODA', t_eval=np.linspace(t_span2[0], t_span2[1], 2000))
