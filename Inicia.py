@@ -4,81 +4,75 @@ dominio(): fixa o dominio retangular no plano c = c0
 concentrations(): fixa as concentracoes cmin e cmax
 viscosidades(): fixa as viscosidades muw0(inicial da agua), muo e mug
 baricentrica(): fixa se vai usar coordenadas baricentricas ou nao
-DadosIntegracao(): fixa o comprimento do passo de integracao
-                   e o numero de pontos com passo h
-ambiente3d(): Seta o ambiente 3d e devolve "axes" para plotagem 3d para a matplotlib
+DadosIntegracao(): fixa o comprimento do passo de integracao 
+                   e os numero de pontos com passo axes = figure.add_subplot(projection='3d')h
+ambiente3d(): Seta o ambiente 3d e devolve "axes" para plotagem 3d
+
 """
+import matplotlib.pyplot as plt
 
-import matplotlib.pyplot as plt  # type: ignore
-from numbers import Real
-
-
-def dominio() -> tuple[Real, Real, Real, Real, int]:
-    # Define uma regiao R retangular para calculos.
-    # Quando tal regiao R ultrapassar os limites do triangulo, as
-    # funcoes especificas devem fazer esta restricao adicional de considerar
-    # pontos apenas na interseccao da regiao R com o triangulo
-
-    triang = 1  # 1 caso seja calculado em todo o triangulo.
-
-    umin: Real
-    umax: Real
-    vmin: Real
-    vmax: Real
-    if triang == 1:  # Calculos no triangulo todo
+def dominio():
+# Define uma regiao R retangular para calculos.
+# Quando tal regiao R ultrapassar os limites do triangulo, as
+# funcoes especificas devem fazer esta restricao adicional de considerar
+# pontos apenas na interseccao da regiao R com o triangulo
+    
+    
+    triang = 1 # 1 caso seja calculado em todo o triangulo.
+    
+    if triang == 1: # Calculos no triangulo todo
         umin = 0.0
         umax = 1.0
         vmin = 0.0
         vmax = 1.0
-    else:  # Calculo em regiao retangular especifica para "zoom"
-        umin = 0.2  # 0.315#0.2
-        umax = 0.6  # 0.415#0.6
-        vmin = 0.25  # 0.515#0.35
-        vmax = 0.75  # 0.630#0.75
+    else: # Calculo em regiao retangular especifica para "zoom"
+        umin = 0.0#0.315#0.2
+        umax = 1.0#0.415#0.6
+        vmin = 0.0#0.0#0.515#0.35
+        vmax = 1.0#1.0#0.630#0.75
+        
+    return(umin, umax, vmin, vmax, triang)
+    
 
-    return (umin, umax, vmin, vmax, triang)
+def concentrations(): #Viscosidade da agua
+    cmin = 0.0#0.5928522166980628
+    #cmax = 1.0#0.666616 #0.284124  # #1.0 Normal# L1 0.28017 #L2 e L3 0.284124
+    cmax = 1.0#0.66#0.28017 #L1
+    return(cmin,cmax)
 
+def viscosidades(): #Viscosidades da agua, do oleo e do gas
+    muw0 = 1.0 #Viscosidade inicial sem polimero
+    muo = 4.0#9.5
+    mug = 0.25#0.45
+    return(muw0, muo, mug)
+    
+def baricentrica(): #Mapeamento ou nao?
+    x = 0# x = 1 se quiser coordenadas baricentricas
+    return(x)
+    
+def DadosIntegracao(): #Para integracao dos contatos
+    N = 20000 # Numero de pontos na curva integral do contato para h > 0
+    h = 0.02#  # Passo de integração
+    return(N, h)
 
-def concentrations() -> tuple[Real, Real]:  # Viscosidade da agua
-    cmin: Real = 0.0  # 0.5928522166980628
-    # cmax = 1.0#0.666616 #0.284124 # #1.0 Normal# L1 0.28017 #L2 e L3 0.284124
-    cmax: Real = 1.0  # 0.66#0.28017 #L1
-    return (cmin, cmax)
+def bib():
+    lib = 1 # 0 LapTop,  1 DeskTop
+    return(lib)
 
-
-def viscosidades() -> tuple[Real, Real, Real]:
-    # Viscosidades da agua, do oleo e do gas
-    muw0: Real = 1.0  # Viscosidade inicial sem polimero
-    muo: Real = 4.0  # 9.5
-    mug: Real = 0.25  # 0.45
-    return (muw0, muo, mug)
-
-
-def baricentrica() -> int:  # Mapeamento ou nao?
-    x = 1  # x = 1 se quiser coordenadas baricentricas
-    return x
-
-
-def DadosIntegracao() -> tuple[int, Real]:  # Para integracao dos contatos
-    N = 20000  # Numero de pontos na curva integral do contato para h > 0
-    h = 0.1  # Passo de integração
-    return (N, h)
-
-
-def ambiente3d() -> plt.Axes:
-    figure = plt.figure("PrismDomain")
-    axes = figure.add_subplot(111, projection='3d')
-
-    return axes
-
-
-def Nniveis() -> int:
-    return 20
-
-
+def ambiente3d():
+    figure = plt.figure('PrismDomain')
+    lib = bib()
+    print('\n \n Inicia.bib(): lib = 1 if matplotlib3.2-Laptop')
+    print('               lib = 0 if not matplotlib3.2-desktop.')
+    print('               Actual value of lib =', lib, '\n\n')
+    if lib == 0:
+        axes = figure.gca(projection='3d')
+    else:
+        axes = figure.add_subplot(projection='3d')  
+    return(axes)
+    
 ####################
-# Definir funcao que armazena estilos de linhas:
-# dashed, densely dashed, solid, etc
+# Definir funcao que armazena estilos d elinhas, dashed, densed dashed , solid,etc
 # from collections import OrderedDict
 
 # linestyles_dict = OrderedDict(

@@ -54,22 +54,91 @@ def newton_correction(u0, v0, c_prev, f0, g0, z0, iterations=3):
             break
     return u, v
 
-def resolver_trajetoria(u0, v0, c0, t_span=(0, 10), t_span2=(0, -10)):
+def resolver_trajetoria(u0, v0, c0, t_span=(0, 10), t_span2=(0, -10), num_steps=2000):
     """
-    Resolve a trajetória a partir das condições iniciais fornecidas.
-    
+    Resolve a trajetória a partir das condições iniciais fornecidas, aplicando a correção de Newton em cada passo.
+
     Parâmetros:
         u0, v0, c0: Condições iniciais para u, v, c.
         t_span, t_span2: Intervalos de tempo para integração positiva e negativa.
-    
+        num_steps: Número de passos para a integração.
+
     Retorna:
         sol, sol2: Soluções para a trajetória positiva e negativa.
     """
-    # Corrigir ponto a ponto A fazer a correção de Newton
-    y0 = [u0, v0, c0]
-    sol = solve_ivp(system, t_span, y0, method='LSODA', t_eval=np.linspace(t_span[0], t_span[1], 2000))
-    sol2 = solve_ivp(system, t_span2, y0, method='LSODA', t_eval=np.linspace(t_span2[0], t_span2[1], 2000))
+    # Integração no sentido positivo
+    t_values = np.linspace(t_span[0], t_span[1], num_steps + 1)
+    y_values = np.zeros((3, num_steps + 1))
+    y_values[:, 0] = [u0, v0, c0]
+
+    for i in range(num_steps):
+        t_i = t_values[i]
+        y_i = y_values[:, i]
+        delta_t = t_values[i + 1] - t_i
+
+        # Método de Runge-Kutta de quarta ordem (RK4)
+        k1 = delta_t * system(t_i, y_i)
+        k2 = delta_t * system(t_i + delta_t / 2, y_i + k1 / 2)
+        k3 = delta_t * system(t_i + delta_t / 2, y_i + k2 / 2)
+        k4 = delta_t * system(t_i + delta_t, y_i + k3)
+        y_next = y_i + (k1 + 2 * k2 + 2 * k3 + k4) / 6
+
+        # Preparar para a correção de Newton
+        u0_prev, v0_prev, c0_prev = y_i
+        f0 = f(u0_prev, v0_prev, c0_prev)
+        g0 = g(u0_prev, v0_prev, c0_prev)
+        z0 = c0_prev
+        c_prev = y_next[2]
+
+        # Aplicar a correção de Newton
+        u_corr, v_corr = newton_correction(u0_prev, v0_prev, c_prev, f0, g0, z0)
+        y_next[0], y_next[1] = u_corr, v_corr
+
+        # Atualizar os valores para o próximo passo
+        y_values[:, i + 1] = y_next
+
+    # Integração no sentido negativo
+    t_values_neg = np.linspace(t_span2[0], t_span2[1], num_steps + 1)
+    y_values_neg = np.zeros((3, num_steps + 1))
+    y_values_neg[:, 0] = [u0, v0, c0]
+
+    for i in range(num_steps):
+        t_i = t_values_neg[i]
+        y_i = y_values_neg[:, i]
+        delta_t = t_values_neg[i + 1] - t_i
+
+        # Método de Runge-Kutta de quarta ordem (RK4)
+        k1 = delta_t * system(t_i, y_i)
+        k2 = delta_t * system(t_i + delta_t / 2, y_i + k1 / 2)
+        k3 = delta_t * system(t_i + delta_t / 2, y_i + k2 / 2)
+        k4 = delta_t * system(t_i + delta_t, y_i + k3)
+        y_next = y_i + (k1 + 2 * k2 + 2 * k3 + k4) / 6
+
+        # Preparar para a correção de Newton
+        u0_prev, v0_prev, c0_prev = y_i
+        f0 = f(u0_prev, v0_prev, c0_prev)
+        g0 = g(u0_prev, v0_prev, c0_prev)
+        z0 = c0_prev
+        c_prev = y_next[2]
+
+        # Aplicar a correção de Newton
+        u_corr, v_corr = newton_correction(u0_prev, v0_prev, c_prev, f0, g0, z0)
+        y_next[0], y_next[1] = u_corr, v_corr
+
+        # Atualizar os valores para o próximo passo
+        y_values_neg[:, i + 1] = y_next
+
+    # Criar objetos de solução semelhantes ao retornado pelo solve_ivp
+    class Solution:
+        def __init__(self, t, y):
+            self.t = t
+            self.y = y
+
+    sol = Solution(t_values, y_values)
+    sol2 = Solution(t_values_neg, y_values_neg)
+
     return sol, sol2
+
 
 # Função para verificar se um ponto está dentro do triângulo
 def dentro_do_triangulo(u, v, c):

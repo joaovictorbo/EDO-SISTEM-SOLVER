@@ -2,7 +2,7 @@ import numpy as np
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 
-alpha = 1
+alpha = 0
 muw0 = 1.0  # Viscosidade inicial sem polimero
 
 # Funções dadas
@@ -92,5 +92,5 @@ def system(s, y):
     eq2 = q(u, v, c) / N(u, v, c) if N(u, v, c) else None
     eq3 = r(u,v,c) / N(u, v, c) if N(u, v, c) else None
     if eq1 is None or eq2 is None or eq3 is None:
-        raise ValueError("Ponto singular do sistema de EDOs")
-    return [eq1, eq2, eq3]
+        raise ValueError("Ponto singular do sistema de EDOs")   
+    return np.array([eq1, eq2, eq3])

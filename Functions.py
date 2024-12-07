@@ -21,7 +21,7 @@ fwu(u,v,c): dfw/du
 fwv(u,v,c): dfw/dv
 fwc(u,v,c): dfw/dc
 
-fw(u,v,c): funcao fluxo oleo
+fo(u,v,c): funcao fluxo oleo
 fou(u,v,c): dfo/du
 fov(u,v,c): dfo/dv
 foc(u,v,c): dfo/dc
@@ -57,17 +57,6 @@ import Inicia as ini
 # Concentracoes iniciais
 cmin, cmax = ini.concentrations()
 
-# Saturacoes inciais a esquerda no plano cl
-#ul, vl, cl = ini.Ul()
-
-# Saturacoes iniciais a direita no plano cr
-#ur, vr, cr = ini.Ur()
-'''
-# Viscosidades
-muwl = ini.muw(cl)
-muwr = ini.muw(cr)
-
-'''
 muw0, muo, mug = ini.viscosidades()
 
 # Testa se o ponto (u,v) estah fora de um quadrado interior ao triangulo
@@ -93,16 +82,20 @@ def map(x, y, mp): #Funcao que faz o mapeamento do triangulo equilatero
 #Desmapeamento
 def umap(x, y, mp): #Funcao que faz o des-mapeamento do triangulo equilatero
     if mp == 1:
-        x = x - 1/np.sqrt(3)*y
-        y = 2/np.sqrt(3)*y
+        sqrt3 = np.sqrt(3)
+        x = x - 1/sqrt3 * y
+        y = 2/sqrt3*y
     return x,y
 
 #Viscosidade da agua em funcao da concetracao do polimero   
 def muw(c): #Viscosidade da agua
-    return muw0 * 2**c
+    #return muw0 + c
+    return muw0*2**c
 
 def muwc(c): #dmuw/dc
-    return np.log(2) * muw0 * 2**c
+    #return 1.0
+    ln2 = np.log(2)
+    return ln2*muw0*2**c
 
 #Denominador (mobilidade total)
 def D(u,v,c): #Denominador
@@ -126,13 +119,17 @@ def fw(u,v,c): #fw
     return (u**2/muw(c))/D(u,v,c)
 
 def fwu(u,v,c): #dfw/du
-    return (2*u/muw(c)*D(u,v,c) - u**2/muw(c)*Du(u,v,c)) / (D(u,v,c)**2)
+    denom = D(u, v, c)
+    viscw = muw(c)
+    return (2*u/viscw*denom - u**2/viscw*Du(u,v,c)) / (denom**2)
 
 def fwv(u,v,c): #dfw/dv
     return (- u**2/muw(c)*Dv(u,v,c)) / (D(u,v,c)**2)
 
 def fwc(u,v,c): #dfw/dc
-    return u**2*(- (muwc(c)/muw(c)**2)*D(u,v,c) - Dc(u,v,c)/muw(c)) / (D(u,v,c)**2)
+    denom = D(u, v, c)
+    viscw = muw(c)
+    return u**2*(- (muwc(c)/viscw**2)*denom - Dc(u,v,c)/viscw) / (denom**2)
                         
 def fo(u,v,c): #fo
     return (v**2/muo)/D(u,v,c)
@@ -141,7 +138,8 @@ def fou(u,v,c): #dfo/du
     return (-v**2/muo)*Du(u,v,c) / (D(u,v,c)**2)
 
 def fov(u,v,c): #dfo/dv
-    return (2*v/muo*D(u,v,c) - v**2/muo*Dv(u,v,c)) / (D(u,v,c)**2)
+    denom = D(u, v, c)
+    return (2*v/muo*denom - v**2/muo*Dv(u,v,c)) / (denom**2)
 
 def foc(u,v,c): #dfo/dc
     return -v**2/muo*Dc(u,v,c) / (D(u,v,c)**2)
@@ -151,12 +149,14 @@ def fg(u,v,c): #fg
     return (w**2/mug)/D(u,v,c)
 
 def fgu(u,v,c): #dfg/du
+    denom = D(u, v, c)
     w = 1 - u - v
-    return (-2*w/mug*D(u,v,c)-w**2/mug*Du(u,v,c))/(D(u,v,c)**2)
+    return (-2*w/mug*denom-w**2/mug*Du(u,v,c))/(denom**2)
 
 def fgv(u,v,c): #dfg/dv
+    denom = D(u, v, c)
     w = 1 - u - v
-    return (-2*w/mug*D(u,v,c)-w**2/mug*Dv(u,v,c))/(D(u,v,c)**2)
+    return (-2*w/mug*denom-w**2/mug*Dv(u,v,c))/(denom**2)
 
 def fgc(u,v,c): #dfg/dv
     w = 1 - u - v
@@ -174,7 +174,17 @@ def jac3(u,v,c):
     return [[fwu(u,v,c), fwv(u,v,c), fwc(u,v,c)], [fou(u,v,c), fov(u,v,c), foc(u,v,c)],
              [0.0, 0.0, fwoversw]]
  
-   
+ 
+def dFGdudv(u,v,c):
+    return [[fwu(u,v,c), fwv(u,v,c)], [fou(u,v,c), fov(u,v,c)]]
+    
+def dFGdudc(u,v,c):
+    return [[fwu(u,v,c), fwv(u,v,c)], [fou(u,v,c), fov(u,v,c)]]
+    
+def dFGdvdc(u,v,c):
+    return [[fwu(u,v,c), fwv(u,v,c)], [fou(u,v,c), fov(u,v,c)]]
+
+
 ################################################
 # Autovalor contato lambdac
 def lbdc(u,v,c): #lambdac = fw/sw
@@ -192,13 +202,7 @@ def lbdas(u,v,c):
     a21 = fou(u,v,c)
     a22 = fov(u,v,c)
     
-    vneg = 0.5*(a11 + a22 - np.sqrt((a22 - a11)**2 + 4*a21*a12))
-    vpos = 0.5*(a11 + a22 + np.sqrt((a22 - a11)**2 + 4*a21*a12))
-       
-    if vneg.any() <= vpos.any(): # Usar o any, porque vai ser chaamada num vetor
-        lambdas = vneg
-    else:
-        lambdas = vpos
+    lambdas = 0.5*(a11 + a22 - np.sqrt((a22 - a11)**2 + 4*a21*a12))
           
     return lambdas
 
@@ -209,13 +213,7 @@ def lbdaf(u,v,c):
     a21 = fou(u,v,c)
     a22 = fov(u,v,c)
     
-    vneg = 0.5*(a11 + a22 - np.sqrt((a11 - a22)**2 + 4*a21*a12))
-    vpos = 0.5*(a11 + a22 + np.sqrt((a11 - a22)**2 + 4*a21*a12))
-    
-    if vneg.any() <= vpos.any():
-        lambdaf = vpos
-    else:
-        lambdaf = vneg
+    lambdaf = 0.5*(a11 + a22 + np.sqrt((a11 - a22)**2 + 4*a21*a12))
     
     return lambdaf
 
@@ -226,16 +224,11 @@ def eigvls(u,v,c):
     a12 = fwv(u,v,c)
     a21 = fou(u,v,c)
     a22 = fov(u,v,c)
+    traco = a11 + a22
+    discr = np.sqrt((a22 - a11)**2 + 4*a21*a12)
     
-    vneg = 0.5*(a11 + a22 - np.sqrt((a22 - a11)**2 + 4*a21*a12))
-    vpos = 0.5*(a11 + a22 + np.sqrt((a22 - a11)**2 + 4*a21*a12))
-    
-    lambdas = vneg
-    lambdaf = vpos
-    
-    if vneg >= vpos:
-        lambdas = vpos
-        lambdaf = vneg
+    lambdas = 0.5*(traco - discr)
+    lambdaf = traco - lambdas
     
     return lambdas, lambdaf
 

@@ -42,9 +42,9 @@ O1, O2 = fun.map(Ow, Oo, mp)
 
 # O triangulo
 # Prepara uma janela grafica
-plt.figure('saturation triangle', figsize=(8,6), dpi=80)
-plt.xlabel('$s_w$')
-plt.ylabel('$s_o$')
+plt.figure('uv projection on saturation triangle', figsize=(8,6), dpi=80)
+plt.xlabel('$u$')
+plt.ylabel('$v$')
 #plt.axis('off')
 #plt.grid()
 plt.plot([G1, W1], [G2, W2], 'k-') 
