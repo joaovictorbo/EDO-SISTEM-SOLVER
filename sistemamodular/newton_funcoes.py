@@ -3,7 +3,7 @@ import numpy as np
 from scipy.integrate import solve_ivp
 from system import system
 
-alpha = 10**-3
+alpha = 0.1  # Parâmetro de relaxamento
 muw0 = 1.0  # Viscosidade inicial sem polimero
 
 def muw(c):
