@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.integrate import solve_ivp
-
+import newton_funcoes as funcoes
+from jacobiana import calcular_jacobiana
 # Parâmetros globais
 alpha = 0.1
 epsilon_1 = 1.0
@@ -98,7 +99,7 @@ def sigma_alpha(u_L, f_uL, z_R, z_L):
     h_L_value = h_L(z_R, z_L)
     denominator = u_L + alpha * h_L_value
     if denominator == 0:
-        raise ValueError("Divisão por zero ao calzular sigma_alpha.")
+        raise ValueError("Divisão por zero ao calcular sigma_alpha.")
     return f_uL / denominator
 
 # Sistema (50)
@@ -128,11 +129,14 @@ def resolver_trajetoria(u0, v0, z0, u_R, v_R, z_R, f_R, g_R, t_span=(0, 10), num
 if __name__ == "__main__":
     # Valores iniziais
     u_L, v_L, z_L = 0.1, 0.1, 0.1
-    # esses pontos sao valores da lista que o sistema de newton retorna ao colocar os pontos u_L v_L e z_L  
-    u_R, v_R, z_R = 0.7, 0.5, 0.4
+    epsilon_1, epsilon_2 = 1.0, 1.0
+    y_r, y_r2 = funcoes.resolver_trajetoria(u_L, v_L, z_L)
+    u_R, v_R, z_R = y_r[0][-1], y_r[1][-1], y_r[2][-1]
     f_R = f(u_R,v_R,z_R)
     g_R = g(u_R,v_R,z_R) 
     sigmaLR = sigma_alpha(u_L, f_R, z_R, z_L)
-
+    #falta agora so conectar com a jacobiana e resolver o sistema
+    jaco1 = calcular_jacobiana(u_L, v_L, z_L, f_R, g_R, epsilon_1, epsilon_2, alpha=0)
+    jaco2 = calcular_jacobiana(u_L, v_L, z_L, f_R, g_R, epsilon_1, epsilon_2, alpha=1)
     t_span = (0, 10)
     t_values, y_values = resolver_trajetoria(u_L, v_L, z_L, u_R, v_R, z_R, f_R, g_R,sigmaLR, t_span)
