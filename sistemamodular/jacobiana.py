@@ -65,7 +65,7 @@ def lambdac(u, v, c):
     return f(u, v, c) / (u + alpha * da_dc(c))
 
 # Função para calcular a matriz Jacobiana
-def calcular_jacobiana(u, v, c, f_R, g_R, epsilon_1, epsilon_2, alpha=0):
+def calcular_jacobiana(u, v, c, f_R, g_R,sigma_alpha, epsilon_1, epsilon_2, alpha):
     # Derivadas parciais
     dfu = df_du(u, v, c)
     dfv = df_dv(u, v, c)
@@ -76,7 +76,6 @@ def calcular_jacobiana(u, v, c, f_R, g_R, epsilon_1, epsilon_2, alpha=0):
     
     # Lambda e sigma
     lambda_c = lambdac(u, v, c)
-    sigma_alpha = f_R / (u + alpha * da_dc(c))
     
     # Jacobiana
     jacobiana = np.array([
@@ -87,19 +86,19 @@ def calcular_jacobiana(u, v, c, f_R, g_R, epsilon_1, epsilon_2, alpha=0):
     
     return jacobiana
 
-# Exemplo de uso
-u, v, c = 0.5, 0.3, 0.2  # Ponto de teste
-f_R, g_R = f(u,v,c), g(u,v,c)  # Valores de referência
-epsilon_1, epsilon_2 = 1.0, 1.0  # Parâmetros do sistema
+# # Exemplo de uso
+# u, v, c = 0.5, 0.3, 0.2  # Ponto de teste
+# f_R, g_R = f(u,v,c), g(u,v,c)  # Valores de referência
+# epsilon_1, epsilon_2 = 1.0, 1.0  # Parâmetros do sistema
 
-# Calcula a Jacobiana
-jacobiana = calcular_jacobiana(u, v, c, f_R, g_R, epsilon_1, epsilon_2)
+# # Calcula a Jacobiana
+# #jacobiana = calcular_jacobiana(u, v, c, f_R, g_R, epsilon_1, epsilon_2)
 
-# Calcula os autovalores
-autovalores = np.linalg.eigvals(jacobiana)
+# # Calcula os autovalores
+# autovalores = np.linalg.eigvals(jacobiana)
 
-# Exibe os resultados
-print("Matriz Jacobiana:")
-print(jacobiana)
-print("\nAutovalores:")
-print(autovalores)
+# # Exibe os resultados
+# print("Matriz Jacobiana:")
+# print(jacobiana)
+# print("\nAutovalores:")
+# print(autovalores)

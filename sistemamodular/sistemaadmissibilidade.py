@@ -4,9 +4,9 @@ import newton_funcoes as funcoes
 from jacobiana import calcular_jacobiana
 
 # Parâmetros globais
-alpha = 0.1
-epsilon_1 = 1.0
-epsilon_2 = 1.0
+alpha = 0.001
+epsilon_1 = 0.1
+epsilon_2 = 0.01
 muw0 = 1.0  # Viscosidade inicial sem polímero
 
 # Funções dadas
@@ -138,44 +138,105 @@ def calcular_autovalores_e_autovetores(jacobiana):
 if __name__ == "__main__":
     # Valores iniciais
     u_L, v_L, z_L = 0.1, 0.1, 0.1
-    epsilon_1, epsilon_2 = 1.0, 1.0
+
+    # Print initial values
+    print(f"Valores iniciais: u_L = {u_L}, v_L = {v_L}, z_L = {z_L}")
 
     # Resolver trajetórias
     t_values, y_values = funcoes.resolver_trajetoria(u_L, v_L, z_L)
-    u_R, v_R, z_R = y_values.y[0, -1], y_values.y[1, -1], y_values.y[2, -1]  # Últimos valores das trajetórias
+    u_R, v_R, z_R = t_values.y[0, 5], t_values.y[1, 5], t_values.y[2, 5]  # Últimos valores das trajetórias
 
+    # Print final values
+    print(f"Valores finais: u_R = {u_R}, v_R = {v_R}, z_R = {z_R}")
+    f_L = f(u_L, v_L, z_L)
+    g_L = g(u_L, v_L, z_L)
     f_R = f(u_R, v_R, z_R)
     g_R = g(u_R, v_R, z_R)
     sigmaLR = sigma_alpha(u_L, f_R, z_R, z_L)
-
+    print(f"sigmaLR = {sigmaLR}")
+    print(f"F/u{f_R/u_R}")
     # Calcular jacobianas
-    jacoL = calcular_jacobiana(u_L, v_L, z_L, f_R, g_R, epsilon_1, epsilon_2, alpha=0)
-    jacoR = calcular_jacobiana(u_R, v_R, z_R, f_R, g_R, epsilon_1, epsilon_2, alpha=1)
+    jacoL = calcular_jacobiana(u_L, v_L, z_L, f_L, g_L, sigmaLR, epsilon_1, epsilon_2, alpha)
+    jacoR = calcular_jacobiana(u_R, v_R, z_R, f_R, g_R, sigmaLR, epsilon_1, epsilon_2, alpha)
 
+    # Print Jacobians in a visually appealing way
+    np.set_printoptions(precision=3, suppress=True)
+    print("Jacobiana em U^L:")
+    print(jacoL)
+    print("\nJacobiana em U^R:")
+    print(jacoR)
     # Determinar autovalores e autovetores
     (autovalores_pos_L, autovetores_pos_L), (autovalores_neg_L, autovetores_neg_L) = calcular_autovalores_e_autovetores(jacoL)
     (autovalores_pos_R, autovetores_pos_R), (autovalores_neg_R, autovetores_neg_R) = calcular_autovalores_e_autovetores(jacoR)
 
-    # Exibir autovalores e autovetores
+    # Exibir autovalores e autovetores (já normalizados)
     print("Autovalores positivos de J(U^L):", autovalores_pos_L)
     print("Autovetores positivos de J(U^L):\n", autovetores_pos_L)
 
     print("\nAutovalores negativos de J(U^R):", autovalores_neg_R)
     print("Autovetores negativos de J(U^R):\n", autovetores_neg_R)
-
-    # Determinar os pontos iniciais U_k^0
-    U_k0 = [u_L + autovetores_pos_L[:, i] for i in range(autovetores_pos_L.shape[1])]
+    
+    import matplotlib.pyplot as plt
 
     # Simular as órbitas
-    sigma = 0.5
-    for i, U0 in enumerate(U_k0):
-        print(f"\nSimulando órbita para U_k^0[{i}]:", U0)
-        t_values, y_values = resolver_trajetoria(U0[0], U0[1], U0[2], u_R, v_R, z_R, f_R, g_R, sigma)
+    # tem que fazer sair todas as variacoes de U0 na mesma foto tanto somando quanto subtraindo os autovetores
+    for i in range(autovetores_pos_L.shape[1]):
+        U0_pos = u_L + 0.0001 * autovetores_pos_L[:, i]
+        U0_neg = u_L - 0.0001 * autovetores_neg_L[:, i]
 
-        max_diff = np.max(np.abs(y_values.T - [u_R, v_R, z_R]), axis=0)
-        print("Máxima diferença em relação a U^R:", max_diff)
+        print(f"\nSimulando órbita para U_k^0 positivo[{i}]:", U0_pos)
+        t_values_pos, y_values_pos = resolver_trajetoria(U0_pos[0], U0_pos[1], U0_pos[2], u_R, v_R, z_R, f_R, g_R, sigmaLR,t_span=(0, 1000), num_steps=5000)
+        print("Trajetória simulada positiva:", y_values_pos)
+        min_diff_pos = np.min(np.linalg.norm(y_values_pos.T - [u_R, v_R, z_R], axis=1))
+        print("Minima diferença em relação a U^R (positivo):", min_diff_pos)
 
-        if np.all(max_diff < 1e-10):
-            print(f"A órbita para U_k^0[{i}] aproxima U^R satisfatoriamente.")
-        else:
-            print(f"A órbita para U_k^0[{i}] NÃO aproxima U^R.")
+        print(f"\nSimulando órbita para U_k^0 negativo[{i}]:", U0_pos)
+        t_values_neg, y_values_neg = resolver_trajetoria(U0_pos[0], U0_pos[1], U0_pos[2], u_R, v_R, z_R, f_R, g_R, sigmaLR,t_span=(0, -1000), num_steps=5000)
+        print("Trajetória simulada negativa:", y_values_neg)
+        min_diff_neg = np.min(np.linalg.norm(y_values_neg.T - [u_R, v_R, z_R], axis=1))
+        print("Minima diferença em relação a U^R (negativo):", min_diff_neg)
+
+        # Plotar u por z e v por z
+        plt.figure(figsize=(12, 6))
+
+        plt.subplot(1, 3, 1)
+        plt.plot(y_values_pos[0], y_values_pos[2], label=f'Órbita Positiva {i}')
+        plt.plot(y_values_neg[0], y_values_neg[2], label=f'Órbita Negativa {i}')
+        plt.plot(t_values.y[0], t_values.y[2], '--', label='Órbita U^L')
+        plt.scatter([u_L], [z_L], color='red', label='Ponto Inicial U_L')
+        plt.scatter([u_R], [z_R], color='blue', label='Ponto Inicial U_R')
+        plt.scatter([0], [0], color='black')
+        plt.scatter([1], [1], color='black')
+        plt.xlabel('u')
+        plt.ylabel('z')
+        plt.title('u por z')
+        plt.legend()
+
+        plt.subplot(1, 3, 2)
+        plt.plot(y_values_pos[1], y_values_pos[2], label=f'Órbita Positiva {i}')
+        plt.plot(y_values_neg[1], y_values_neg[2], label=f'Órbita Negativa {i}')
+        plt.plot(t_values.y[1],t_values.y[2], '--',label='Órbita U^L')
+        plt.scatter([v_L], [z_L], color='red', label='Ponto Inicial V_L')
+        plt.scatter([v_R], [z_R], color='blue', label='Ponto Inicial V_R')
+        plt.scatter([0], [0], color='black')
+        plt.scatter([1], [1], color='black')
+        plt.xlabel('v')
+        plt.ylabel('z')
+        plt.title('v por z')
+        plt.legend()
+
+        plt.subplot(1, 3, 3)
+        plt.plot(y_values_pos[0], y_values_pos[1], label=f'Órbita Positiva {i}')
+        plt.plot(y_values_neg[0], y_values_neg[1], label=f'Órbita Negativa {i}')
+        plt.plot(t_values.y[0],t_values.y[1], '--',label='Órbita U^L')
+        plt.scatter([u_L], [v_L], color='red', label='Ponto Inicial V_L')
+        plt.scatter([u_R], [v_R], color='blue', label='Ponto Inicial V_R')
+        plt.scatter([0], [0], color='black')
+        plt.scatter([1], [1], color='black')
+        plt.xlabel('u')
+        plt.ylabel('v')
+        plt.title('u por v')
+        plt.legend()
+
+        plt.tight_layout()
+        plt.show()

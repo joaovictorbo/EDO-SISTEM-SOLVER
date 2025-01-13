@@ -3,7 +3,7 @@ import numpy as np
 from scipy.integrate import solve_ivp
 from system import system
 
-alpha = 0.1  # Parâmetro de relaxamento
+alpha = 0.001  # Parâmetro de relaxamento
 muw0 = 1.0  # Viscosidade inicial sem polimero
 
 def muw(c):
@@ -28,6 +28,7 @@ def f(u, v, c):
 def g(u, v, c):
     return (v**2 / muo()) / D(u, v, c)
 
+#Pertencem ao sistema 30
 def F(u, v, z, u0, v0, f0, g0):
     return (f(u, v, z) - f0) * (v - v0) - (g(u, v, z) - g0) * (u - u0)
 
@@ -35,6 +36,7 @@ def G(u, v, z, u0, f0, z0):
     return (f(u, v, z) - f0) * (u0 * (z - z0) + alpha * (np.sin(z) - np.sin(z0))) - f0 * (z - z0) * (u - u0)
 
 def compute_jacobian(u, v, c, u0, v0, f0, g0, z0, h=1e-6):
+#VER FORMULAS 31 a 36
     F_u = (F(u + h, v, c, u0, v0, f0, g0) - F(u - h, v, c, u0, v0, f0, g0)) / (2*h)
     F_v = (F(u, v + h, c, u0, v0, f0, g0) - F(u, v - h, c, u0, v0, f0, g0)) / (2*h)
     G_u = (G(u + h, v, c, u0, f0, z0) - G(u - h, v, c, u0, f0, z0)) / (2*h)
