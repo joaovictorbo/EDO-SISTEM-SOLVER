@@ -1,15 +1,16 @@
 import numpy as np
 from scipy.integrate import solve_ivp
-import newton_funcoes as funcoes
+import matplotlib.pyplot as plt
+
+import newton_funcoes as funcoes  # <- suas funções de integração (ou substitua pelo que precisar)
 from jacobiana import calcular_jacobiana
 
-# Parâmetros globais
+# ----- PARÂMETROS GLOBAIS -----
 alpha = 0.001
 epsilon_1 = 0.1
 epsilon_2 = 0.01
 muw0 = 1.0  # Viscosidade inicial sem polímero
 
-# Funções dadas
 def muw(z):  # Viscosidade da água
     return muw0 * 2**z
 
@@ -32,24 +33,6 @@ def f(u, v, z):
 def g(u, v, z):
     return (v**2 / muo()) / D(u, v, z)
 
-def df_du(u, v, z):
-    return (2 * u / muw(z) * D(u, v, z) - u**2 / muw(z) * D_du(u, v, z)) / (D(u, v, z)**2)
-
-def df_dv(u, v, z):
-    return (-u**2 / muw(z) * D_dv(u, v, z)) / (D(u, v, z)**2)
-
-def df_dz(u, v, z):
-    return u**2 * (-muwz(z) / muw(z)**2 * D(u, v, z) - D_dz(u, v, z) / muw(z)) / (D(u, v, z)**2)
-
-def dg_du(u, v, z):
-    return (-v**2 / muo() * D_du(u, v, z)) / (D(u, v, z)**2)
-
-def dg_dv(u, v, z):
-    return (2 * v / muo() * D(u, v, z) - v**2 / muo() * D_dv(u, v, z)) / (D(u, v, z)**2)
-
-def dg_dz(u, v, z):
-    return -v**2 / muo() * D_dz(u, v, z) / (D(u, v, z)**2)
-
 def D_du(u, v, z):
     w = 1 - u - v
     return 2 * u / muw(z) - 2 * w / mug()
@@ -61,6 +44,26 @@ def D_dv(u, v, z):
 def D_dz(u, v, z):
     return -u**2 * muwz(z) / muw(z)**2
 
+def df_du(u, v, z):
+    return (2 * u / muw(z) * D(u, v, z) - (u**2 / muw(z))*D_du(u, v, z)) / (D(u, v, z)**2)
+
+def df_dv(u, v, z):
+    return (-(u**2 / muw(z)) * D_dv(u, v, z)) / (D(u, v, z)**2)
+
+def df_dz(u, v, z):
+    return u**2 * (
+        -muwz(z) / muw(z)**2 * D(u, v, z) - D_dz(u, v, z) / muw(z)
+    ) / (D(u, v, z)**2)
+
+def dg_du(u, v, z):
+    return (-(v**2 / muo()) * D_du(u, v, z)) / (D(u, v, z)**2)
+
+def dg_dv(u, v, z):
+    return (2 * v / muo() * D(u, v, z) - (v**2 / muo())*D_dv(u, v, z)) / (D(u, v, z)**2)
+
+def dg_dz(u, v, z):
+    return -(v**2 / muo()) * D_dz(u, v, z) / (D(u, v, z)**2)
+
 def a(z):
     return np.sin(z)
 
@@ -71,13 +74,17 @@ def lambdaz(u, v, z):
     return f(u, v, z) / (u + alpha * da_dz(z))
 
 def detalpha(u, v, z):
-    return ((df_du(u, v, z) - lambdaz(u, v, z)) * (dg_dv(u, v, z) - lambdaz(u, v, z)) - df_dv(u, v, z) * dg_du(u, v, z))
+    return ((df_du(u, v, z) - lambdaz(u, v, z))
+            * (dg_dv(u, v, z) - lambdaz(u, v, z))
+            - df_dv(u, v, z)*dg_du(u, v, z))
 
 def det1(u, v, z):
-    return (df_dv(u, v, z) * dg_dz(u, v, z) - df_dz(u, v, z) * (dg_dv(u, v, z) - lambdaz(u, v, z)))
+    return (df_dv(u, v, z)*dg_dz(u, v, z)
+            - df_dz(u, v, z)*(dg_dv(u, v, z) - lambdaz(u, v, z)))
 
 def det2(u, v, z):
-    return (df_dz(u, v, z) * dg_du(u, v, z) - (df_du(u, v, z) - lambdaz(u, v, z)) * dg_dz(u, v, z))
+    return (df_dz(u, v, z)*dg_du(u, v, z)
+            - (df_du(u, v, z) - lambdaz(u, v, z))*dg_dz(u, v, z))
 
 def p(u, v, z):
     return det1(u, v, z)
@@ -94,19 +101,17 @@ def h_L(z_R, z_L):
     else:
         return da_dz(z_L)
 
-# Função para calcular sigma_alpha
 def sigma_alpha(u_L, f_R, z_R, z_L):
     h_L_value = h_L(z_R, z_L)
     denominator = u_L + alpha * h_L_value
     if denominator == 0:
         raise ValueError("Divisão por zero ao calcular sigma_alpha.")
     return f_R / denominator
+# ------------------------------------------------------------------------------
 
 # Sistema (50)
 def system(s, y, u_R, v_R, z_R, f_R, g_R, sigma):
     u, v, z = y
-
-    # Componentes do sistema (50)
     du_ds = f(u, v, z) - f_R - sigma * (u - u_R)
     dv_ds = g(u, v, z) - g_R - sigma * (v - v_R)
     dz_ds = (epsilon_1 / epsilon_2) * (
@@ -114,14 +119,16 @@ def system(s, y, u_R, v_R, z_R, f_R, g_R, sigma):
     )
     return [du_ds, dv_ds, dz_ds]
 
-# Resolver as trajetórias do sistema
-def resolver_trajetoria(u0, v0, z0, u_R, v_R, z_R, f_R, g_R, sigma, t_span=(0, 10), num_steps=500):
+def resolver_trajetoria(u0, v0, z0, u_R, v_R, z_R, f_R, g_R, sigma,
+                        t_span=(0,10), num_steps=500):
+    """
+    Resolve o IVP para os valores iniciais (u0, v0, z0).
+    """
     def rhs(s, y):
         return system(s, y, u_R, v_R, z_R, f_R, g_R, sigma)
 
-    t_values = np.linspace(t_span[0], t_span[1], num_steps)
-    sol = solve_ivp(rhs, t_span, [u0, v0, z0], t_eval=t_values, method="RK45")
-
+    t_eval = np.linspace(t_span[0], t_span[1], num_steps)
+    sol = solve_ivp(rhs, t_span, [u0, v0, z0], t_eval=t_eval, method='RK45')
     return sol.t, sol.y
 
 def calcular_autovalores_e_autovetores(jacobiana):
@@ -132,111 +139,167 @@ def calcular_autovalores_e_autovetores(jacobiana):
     autovalores, autovetores = np.linalg.eig(jacobiana)
     indices_positivos = np.where(autovalores > 0)[0]
     indices_negativos = np.where(autovalores < 0)[0]
-    return (autovalores[indices_positivos], autovetores[:, indices_positivos]), \
-           (autovalores[indices_negativos], autovetores[:, indices_negativos])
+    return ((autovalores[indices_positivos], autovetores[:, indices_positivos]),
+            (autovalores[indices_negativos], autovetores[:, indices_negativos]))
+
+def gerar_pontos_iniciais(u_c, v_c, z_c, N, raio):
+    """
+    Gera N pontos iniciais em um círculo de raio 'raio' no plano (u,v)
+    em torno de (u_c, v_c). Mantém z = z_c.
+    """
+    thetas = np.linspace(0, 2*np.pi, N, endpoint=False)
+    pontos = []
+    for theta in thetas:
+        u_i = u_c + raio * np.cos(theta)
+        v_i = v_c + raio * np.sin(theta)
+        z_i = z_c
+        pontos.append([u_i, v_i, z_i])
+    return pontos
 
 if __name__ == "__main__":
     # Valores iniciais
     u_L, v_L, z_L = 0.1, 0.1, 0.1
-
-    # Print initial values
     print(f"Valores iniciais: u_L = {u_L}, v_L = {v_L}, z_L = {z_L}")
 
-    # Resolver trajetórias
-    t_values, y_values = funcoes.resolver_trajetoria(u_L, v_L, z_L)
-    u_R, v_R, z_R = t_values.y[0, 5], t_values.y[1, 5], t_values.y[2, 5]  # Últimos valores das trajetórias
+    # Exemplo de como você chamou a função funcoes.resolver_trajetoria
+    # (Adapte conforme seu 'newton_funcoes.py')
+    t_vals, sol_prim = funcoes.resolver_trajetoria(u_L, v_L, z_L)
+    # Vamos supor que sol_prim.y[0,:] = u, sol_prim.y[1,:] = v, sol_prim.y[2,:] = z
 
-    # Print final values
+    # Exemplo de final da trajetória
+    # (pego em sol_prim.y na última coluna - no exemplo, indice -1)
+    u_R = sol_prim.y[0, -1]
+    v_R = sol_prim.y[1, -1]
+    z_R = sol_prim.y[2, -1]
+
     print(f"Valores finais: u_R = {u_R}, v_R = {v_R}, z_R = {z_R}")
+    
     f_L = f(u_L, v_L, z_L)
     g_L = g(u_L, v_L, z_L)
     f_R = f(u_R, v_R, z_R)
     g_R = g(u_R, v_R, z_R)
+
+    # Cálculo de sigma
     sigmaLR = sigma_alpha(u_L, f_R, z_R, z_L)
     print(f"sigmaLR = {sigmaLR}")
-    print(f"F/u{f_R/u_R}")
-    # Calcular jacobianas
+    print(f"F/u: {f_R/u_R if u_R != 0 else 'Divisão por zero em u_R'}")
+
+    # Jacobianas
     jacoL = calcular_jacobiana(u_L, v_L, z_L, f_L, g_L, sigmaLR, epsilon_1, epsilon_2, alpha)
     jacoR = calcular_jacobiana(u_R, v_R, z_R, f_R, g_R, sigmaLR, epsilon_1, epsilon_2, alpha)
 
-    # Print Jacobians in a visually appealing way
     np.set_printoptions(precision=3, suppress=True)
     print("Jacobiana em U^L:")
     print(jacoL)
     print("\nJacobiana em U^R:")
     print(jacoR)
-    # Determinar autovalores e autovetores
+
+    # Autovalores e autovetores
     (autovalores_pos_L, autovetores_pos_L), (autovalores_neg_L, autovetores_neg_L) = calcular_autovalores_e_autovetores(jacoL)
     (autovalores_pos_R, autovetores_pos_R), (autovalores_neg_R, autovetores_neg_R) = calcular_autovalores_e_autovetores(jacoR)
 
-    # Exibir autovalores e autovetores (já normalizados)
     print("Autovalores positivos de J(U^L):", autovalores_pos_L)
     print("Autovetores positivos de J(U^L):\n", autovetores_pos_L)
 
     print("\nAutovalores negativos de J(U^R):", autovalores_neg_R)
     print("Autovetores negativos de J(U^R):\n", autovetores_neg_R)
-    
-    import matplotlib.pyplot as plt
 
-    # Simular as órbitas
-    # tem que fazer sair todas as variacoes de U0 na mesma foto tanto somando quanto subtraindo os autovetores
-    for i in range(autovetores_pos_L.shape[1]):
-        U0_pos = u_L + 0.0001 * autovetores_pos_L[:, i]
-        U0_neg = u_L - 0.0001 * autovetores_neg_L[:, i]
+    # -------------- Exemplo de gerar N pontos iniciais --------------
+    N = 8         # número de pontos
+    raio = 0.001  # raio de perturbação
+    pontos_iniciais = gerar_pontos_iniciais(u_L, v_L, z_L, N, raio)
 
-        print(f"\nSimulando órbita para U_k^0 positivo[{i}]:", U0_pos)
-        t_values_pos, y_values_pos = resolver_trajetoria(U0_pos[0], U0_pos[1], U0_pos[2], u_R, v_R, z_R, f_R, g_R, sigmaLR,t_span=(0, 1000), num_steps=5000)
-        print("Trajetória simulada positiva:", y_values_pos)
-        min_diff_pos = np.min(np.linalg.norm(y_values_pos.T - [u_R, v_R, z_R], axis=1))
-        print("Minima diferença em relação a U^R (positivo):", min_diff_pos)
+    # Plotar a trajetória base (u_L -> ... ), se desejar:
+    # Criar subplots 2D (u x z), (v x z) e (u x v):
+    fig, axes = plt.subplots(1, 3, figsize=(12, 5))
 
-        print(f"\nSimulando órbita para U_k^0 negativo[{i}]:", U0_pos)
-        t_values_neg, y_values_neg = resolver_trajetoria(U0_pos[0], U0_pos[1], U0_pos[2], u_R, v_R, z_R, f_R, g_R, sigmaLR,t_span=(0, -1000), num_steps=5000)
-        print("Trajetória simulada negativa:", y_values_neg)
-        min_diff_neg = np.min(np.linalg.norm(y_values_neg.T - [u_R, v_R, z_R], axis=1))
-        print("Minima diferença em relação a U^R (negativo):", min_diff_neg)
+    # Converte a solução base para plotar via quiver
+    # (exemplo: a cada 5 pontos, para não poluir demais)
+    step = 5  
+    base_u = sol_prim.y[0, ::step]
+    base_v = sol_prim.y[1, ::step]
+    base_z = sol_prim.y[2, ::step]
 
-        # Plotar u por z e v por z
-        plt.figure(figsize=(12, 6))
+    # -- Subplot (u x z)
+    ax_uz = axes[0]
+    ax_uz.quiver(base_u[:-1], base_z[:-1],
+                 base_u[1:] - base_u[:-1],
+                 base_z[1:] - base_z[:-1],
+                 angles='xy', scale_units='xy', scale=1,
+                 color='gray', label='Trajet. base (U^L)')
 
-        plt.subplot(1, 3, 1)
-        plt.plot(y_values_pos[0], y_values_pos[2], label=f'Órbita Positiva {i}')
-        plt.plot(y_values_neg[0], y_values_neg[2], label=f'Órbita Negativa {i}')
-        plt.plot(t_values.y[0], t_values.y[2], '--', label='Órbita U^L')
-        plt.scatter([u_L], [z_L], color='red', label='Ponto Inicial U_L')
-        plt.scatter([u_R], [z_R], color='blue', label='Ponto Inicial U_R')
-        plt.scatter([0], [0], color='black')
-        plt.scatter([1], [1], color='black')
-        plt.xlabel('u')
-        plt.ylabel('z')
-        plt.title('u por z')
-        plt.legend()
+    ax_uz.scatter([u_L], [z_L], color='red', label='Ponto L')
+    ax_uz.scatter([u_R], [z_R], color='blue', label='Ponto R')
+    ax_uz.set_xlabel('u')
+    ax_uz.set_ylabel('z')
+    ax_uz.set_title('u x z')
+    ax_uz.legend()
 
-        plt.subplot(1, 3, 2)
-        plt.plot(y_values_pos[1], y_values_pos[2], label=f'Órbita Positiva {i}')
-        plt.plot(y_values_neg[1], y_values_neg[2], label=f'Órbita Negativa {i}')
-        plt.plot(t_values.y[1],t_values.y[2], '--',label='Órbita U^L')
-        plt.scatter([v_L], [z_L], color='red', label='Ponto Inicial V_L')
-        plt.scatter([v_R], [z_R], color='blue', label='Ponto Inicial V_R')
-        plt.scatter([0], [0], color='black')
-        plt.scatter([1], [1], color='black')
-        plt.xlabel('v')
-        plt.ylabel('z')
-        plt.title('v por z')
-        plt.legend()
+    # -- Subplot (v x z)
+    ax_vz = axes[1]
+    ax_vz.quiver(base_v[:-1], base_z[:-1],
+                 base_v[1:] - base_v[:-1],
+                 base_z[1:] - base_z[:-1],
+                 angles='xy', scale_units='xy', scale=1,
+                 color='gray', label='Trajet. base (U^L)')
 
-        plt.subplot(1, 3, 3)
-        plt.plot(y_values_pos[0], y_values_pos[1], label=f'Órbita Positiva {i}')
-        plt.plot(y_values_neg[0], y_values_neg[1], label=f'Órbita Negativa {i}')
-        plt.plot(t_values.y[0],t_values.y[1], '--',label='Órbita U^L')
-        plt.scatter([u_L], [v_L], color='red', label='Ponto Inicial V_L')
-        plt.scatter([u_R], [v_R], color='blue', label='Ponto Inicial V_R')
-        plt.scatter([0], [0], color='black')
-        plt.scatter([1], [1], color='black')
-        plt.xlabel('u')
-        plt.ylabel('v')
-        plt.title('u por v')
-        plt.legend()
+    ax_vz.scatter([v_L], [z_L], color='red', label='Ponto L')
+    ax_vz.scatter([v_R], [z_R], color='blue', label='Ponto R')
+    ax_vz.set_xlabel('v')
+    ax_vz.set_ylabel('z')
+    ax_vz.set_title('v x z')
+    ax_vz.legend()
 
-        plt.tight_layout()
-        plt.show()
+    # -- Subplot (u x v)
+    ax_uv = axes[2]
+    ax_uv.quiver(base_u[:-1], base_v[:-1],
+                 base_u[1:] - base_u[:-1],
+                 base_v[1:] - base_v[:-1],
+                 angles='xy', scale_units='xy', scale=1,
+                 color='gray', label='Trajet. base (U^L)')
+
+    ax_uv.scatter([u_L], [v_L], color='red', label='Ponto L')
+    ax_uv.scatter([u_R], [v_R], color='blue', label='Ponto R')
+    ax_uv.set_xlabel('u')
+    ax_uv.set_ylabel('v')
+    ax_uv.set_title('u x v')
+    ax_uv.legend()
+
+    # ---------------------------------------------------------------
+    # Agora, para cada ponto inicial do círculo, resolvemos a trajetória
+    # e plotamos com setas.
+    # ---------------------------------------------------------------
+    for idx, (u0, v0, z0) in enumerate(pontos_iniciais):
+        # Resolva a trajetória com tempo positivo, por exemplo:
+        t_loc, sol_loc = resolver_trajetoria(
+            u0, v0, z0, u_R, v_R, z_R, f_R, g_R, sigmaLR,
+            t_span=(0, 100), num_steps=1000
+        )
+
+        # A cada 'stepQ' para plotar setas e não poluir
+        stepQ = 20
+        loc_u = sol_loc[0, ::stepQ]
+        loc_v = sol_loc[1, ::stepQ]
+        loc_z = sol_loc[2, ::stepQ]
+
+        # Quiver (u x z)
+        ax_uz.quiver(loc_u[:-1], loc_z[:-1],
+                     loc_u[1:] - loc_u[:-1],
+                     loc_z[1:] - loc_z[:-1],
+                     angles='xy', scale_units='xy', scale=1,
+                     label=f'Órbita {idx}' if idx<2 else None)  # só label em 2 orbitas p/ não poluir
+
+        # Quiver (v x z)
+        ax_vz.quiver(loc_v[:-1], loc_z[:-1],
+                     loc_v[1:] - loc_v[:-1],
+                     loc_z[1:] - loc_z[:-1],
+                     angles='xy', scale_units='xy', scale=1)
+
+        # Quiver (u x v)
+        ax_uv.quiver(loc_u[:-1], loc_v[:-1],
+                     loc_u[1:] - loc_u[:-1],
+                     loc_v[1:] - loc_v[:-1],
+                     angles='xy', scale_units='xy', scale=1)
+
+    plt.tight_layout()
+    plt.show()

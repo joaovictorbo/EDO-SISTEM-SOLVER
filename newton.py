@@ -142,7 +142,7 @@ def compute_jacobian(u, v, c, h=1e-6):
     return J
 
 # Método de Newton para correção de (u, v) com c congelado
-def newton_correction(u0, v0, c_prev, iterations=3):
+def newton_correction(u0, v0, c_prev, iterations=5):
     u = u0
     v = v0
     for i in range(iterations):

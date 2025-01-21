@@ -43,7 +43,7 @@ def compute_jacobian(u, v, c, u0, v0, f0, g0, z0, h=1e-6):
     G_v = (G(u, v + h, c, u0, f0, z0) - G(u, v - h, c, u0, f0, z0)) / (2*h)
     return np.array([[F_u, F_v], [G_u, G_v]])
 
-def newton_correction(u0, v0, c_prev, f0, g0, z0, iterations=3):
+def newton_correction(u0, v0, c_prev, f0, g0, z0, iterations=10):
     u, v = u0, v0
     for _ in range(iterations):
         B = np.array([F(u, v, c_prev, u0, v0, f0, g0), G(u, v, c_prev, u0, f0, z0)])
