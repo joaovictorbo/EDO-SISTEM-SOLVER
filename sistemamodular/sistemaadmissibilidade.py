@@ -1,8 +1,9 @@
 import numpy as np
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D  # Import necessário para plot 3D
 
-import newton_funcoes as funcoes  # <- suas funções de integração (ou substitua pelo que precisar)
+import newton_funcoes as funcoes 
 from jacobiana import calcular_jacobiana
 
 # ----- PARÂMETROS GLOBAIS -----
@@ -107,7 +108,6 @@ def sigma_alpha(u_L, f_R, z_R, z_L):
     if denominator == 0:
         raise ValueError("Divisão por zero ao calcular sigma_alpha.")
     return f_R / denominator
-# ------------------------------------------------------------------------------
 
 # Sistema (50)
 def system(s, y, u_R, v_R, z_R, f_R, g_R, sigma):
@@ -142,18 +142,21 @@ def calcular_autovalores_e_autovetores(jacobiana):
     return ((autovalores[indices_positivos], autovetores[:, indices_positivos]),
             (autovalores[indices_negativos], autovetores[:, indices_negativos]))
 
-def gerar_pontos_iniciais(u_c, v_c, z_c, N, raio):
+def gerar_pontos_iniciais(u_c, v_c, z_c, N, N2, raio):
     """
     Gera N pontos iniciais em um círculo de raio 'raio' no plano (u,v)
     em torno de (u_c, v_c). Mantém z = z_c.
+    arrumar pra ser 3d
     """
     thetas = np.linspace(0, 2*np.pi, N, endpoint=False)
+    phis = np.linspace(0, np.pi, N2, endpoint=False)
     pontos = []
     for theta in thetas:
-        u_i = u_c + raio * np.cos(theta)
-        v_i = v_c + raio * np.sin(theta)
-        z_i = z_c
-        pontos.append([u_i, v_i, z_i])
+        for phi in phis:
+            u_i = u_c + raio * np.cos(theta) * np.sin(phi)
+            v_i = v_c + raio * np.sin(theta) * np.sin(phi)
+            z_i = z_c + raio * np.cos(phi)
+            pontos.append([u_i, v_i, z_i])
     return pontos
 
 if __name__ == "__main__":
@@ -161,17 +164,13 @@ if __name__ == "__main__":
     u_L, v_L, z_L = 0.1, 0.1, 0.1
     print(f"Valores iniciais: u_L = {u_L}, v_L = {v_L}, z_L = {z_L}")
 
-    # Exemplo de como você chamou a função funcoes.resolver_trajetoria
-    # (Adapte conforme seu 'newton_funcoes.py')
     t_vals, sol_prim = funcoes.resolver_trajetoria(u_L, v_L, z_L)
-    # Vamos supor que sol_prim.y[0,:] = u, sol_prim.y[1,:] = v, sol_prim.y[2,:] = z
 
-    # Exemplo de final da trajetória
-    # (pego em sol_prim.y na última coluna - no exemplo, indice -1)
-    u_R = sol_prim.y[0, -1]
-    v_R = sol_prim.y[1, -1]
-    z_R = sol_prim.y[2, -1]
-
+    # Pegamos o final da trajetória como ponto R
+    u_R = sol_prim.y[0, 1]
+    v_R = sol_prim.y[1, 1]
+    z_R = sol_prim.y[2, 1]
+    distance = np.sqrt((u_R - u_L)**2 + (v_R - v_L)**2 + (z_R - z_L)**2)
     print(f"Valores finais: u_R = {u_R}, v_R = {v_R}, z_R = {z_R}")
     
     f_L = f(u_L, v_L, z_L)
@@ -182,7 +181,10 @@ if __name__ == "__main__":
     # Cálculo de sigma
     sigmaLR = sigma_alpha(u_L, f_R, z_R, z_L)
     print(f"sigmaLR = {sigmaLR}")
-    print(f"F/u: {f_R/u_R if u_R != 0 else 'Divisão por zero em u_R'}")
+    if u_R != 0:
+        print(f"F/u: {f_R/u_R}")
+    else:
+        print("Divisão por zero em u_R para cálculo de F/u.")
 
     # Jacobianas
     jacoL = calcular_jacobiana(u_L, v_L, z_L, f_L, g_L, sigmaLR, epsilon_1, epsilon_2, alpha)
@@ -205,16 +207,15 @@ if __name__ == "__main__":
     print("Autovetores negativos de J(U^R):\n", autovetores_neg_R)
 
     # -------------- Exemplo de gerar N pontos iniciais --------------
-    N = 8         # número de pontos
-    raio = 0.001  # raio de perturbação
-    pontos_iniciais = gerar_pontos_iniciais(u_L, v_L, z_L, N, raio)
+    N = 6
+    N2 = 4         # número de pontos
+    raio = distance / 2
+    pontos_iniciais = gerar_pontos_iniciais(u_L, v_L, z_L, N,N2, raio)
 
-    # Plotar a trajetória base (u_L -> ... ), se desejar:
-    # Criar subplots 2D (u x z), (v x z) e (u x v):
+    # ======= PLOTS 2D =======
     fig, axes = plt.subplots(1, 3, figsize=(12, 5))
 
-    # Converte a solução base para plotar via quiver
-    # (exemplo: a cada 5 pontos, para não poluir demais)
+    # Converte a solução base para plotar via quiver (a cada "step" para não poluir)
     step = 5  
     base_u = sol_prim.y[0, ::step]
     base_v = sol_prim.y[1, ::step]
@@ -265,18 +266,16 @@ if __name__ == "__main__":
     ax_uv.set_title('u x v')
     ax_uv.legend()
 
-    # ---------------------------------------------------------------
-    # Agora, para cada ponto inicial do círculo, resolvemos a trajetória
-    # e plotamos com setas.
-    # ---------------------------------------------------------------
+    # ================================================================
+    # Para cada ponto inicial do círculo, resolvemos a trajetória
+    # e plotamos nos subplots 2D.
+    # ================================================================
     for idx, (u0, v0, z0) in enumerate(pontos_iniciais):
-        # Resolva a trajetória com tempo positivo, por exemplo:
         t_loc, sol_loc = resolver_trajetoria(
             u0, v0, z0, u_R, v_R, z_R, f_R, g_R, sigmaLR,
             t_span=(0, 100), num_steps=1000
         )
 
-        # A cada 'stepQ' para plotar setas e não poluir
         stepQ = 20
         loc_u = sol_loc[0, ::stepQ]
         loc_v = sol_loc[1, ::stepQ]
@@ -287,7 +286,7 @@ if __name__ == "__main__":
                      loc_u[1:] - loc_u[:-1],
                      loc_z[1:] - loc_z[:-1],
                      angles='xy', scale_units='xy', scale=1,
-                     label=f'Órbita {idx}' if idx<2 else None)  # só label em 2 orbitas p/ não poluir
+                     label=f'Órbita {idx}' if idx < 2 else None)
 
         # Quiver (v x z)
         ax_vz.quiver(loc_v[:-1], loc_z[:-1],
@@ -302,4 +301,31 @@ if __name__ == "__main__":
                      angles='xy', scale_units='xy', scale=1)
 
     plt.tight_layout()
+    plt.show()
+
+    # ====== PLOT 3D ======
+    # Agora criamos um plot em 3D para visualizar a trajetória no espaço (u, v, z).
+    fig_3d = plt.figure(figsize=(8, 6))
+    ax_3d = fig_3d.add_subplot(111, projection='3d')
+
+    # Trajetória base (U^L -> U^R)
+    ax_3d.plot(base_u, base_v, base_z, color='gray', label='Trajet. base (U^L)')
+
+    # Marca pontos L e R
+    ax_3d.scatter(u_L, v_L, z_L, color='red', s=50, label='Ponto L')
+    ax_3d.scatter(u_R, v_R, z_R, color='blue', s=50, label='Ponto R')
+
+    # Para cada ponto inicial do círculo, plotamos também a trajetória resultante em 3D:
+    for idx, (u0, v0, z0) in enumerate(pontos_iniciais):
+        t_loc, sol_loc = resolver_trajetoria(
+            u0, v0, z0, u_R, v_R, z_R, f_R, g_R, sigmaLR,
+            t_span=(0, 100), num_steps=1000
+        )
+        ax_3d.plot(sol_loc[0], sol_loc[1], sol_loc[2], alpha=0.8)
+
+    ax_3d.set_xlabel('u')
+    ax_3d.set_ylabel('v')
+    ax_3d.set_zlabel('z')
+    ax_3d.set_title('Trajetórias em 3D (u, v, z)')
+    ax_3d.legend()
     plt.show()
