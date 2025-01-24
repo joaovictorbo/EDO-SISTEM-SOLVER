@@ -2,7 +2,6 @@ import numpy as np
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D  # Import necessário para plot 3D
-
 import newton_funcoes as funcoes 
 from jacobiana import calcular_jacobiana
 
@@ -46,7 +45,7 @@ def D_dz(u, v, z):
     return -u**2 * muwz(z) / muw(z)**2
 
 def df_du(u, v, z):
-    return (2 * u / muw(z) * D(u, v, z) - (u**2 / muw(z))*D_du(u, v, z)) / (D(u, v, z)**2)
+    return (2 * u / muw(z) * D(u, v, z) - (u**2 / muw(z)) * D_du(u, v, z)) / (D(u, v, z)**2)
 
 def df_dv(u, v, z):
     return (-(u**2 / muw(z)) * D_dv(u, v, z)) / (D(u, v, z)**2)
@@ -60,7 +59,7 @@ def dg_du(u, v, z):
     return (-(v**2 / muo()) * D_du(u, v, z)) / (D(u, v, z)**2)
 
 def dg_dv(u, v, z):
-    return (2 * v / muo() * D(u, v, z) - (v**2 / muo())*D_dv(u, v, z)) / (D(u, v, z)**2)
+    return (2 * v / muo() * D(u, v, z) - (v**2 / muo()) * D_dv(u, v, z)) / (D(u, v, z)**2)
 
 def dg_dz(u, v, z):
     return -(v**2 / muo()) * D_dz(u, v, z) / (D(u, v, z)**2)
@@ -123,13 +122,24 @@ def resolver_trajetoria(u0, v0, z0, u_R, v_R, z_R, f_R, g_R, sigma,
                         t_span=(0,10), num_steps=500):
     """
     Resolve o IVP para os valores iniciais (u0, v0, z0).
+    Retorna:
+      - sol_neg: solução para s de 0 até -t_span[1]
+      - sol_pos: solução para s de 0 até t_span[1]
     """
     def rhs(s, y):
         return system(s, y, u_R, v_R, z_R, f_R, g_R, sigma)
 
-    t_eval = np.linspace(t_span[0], t_span[1], num_steps)
-    sol = solve_ivp(rhs, t_span, [u0, v0, z0], t_eval=t_eval, method='RK45')
-    return sol.t, sol.y
+    # Tempo "positivo"
+    t_eval_pos = np.linspace(t_span[0], t_span[1], num_steps)
+    sol_pos = solve_ivp(rhs, t_span, [u0, v0, z0],
+                        t_eval=t_eval_pos, method='RK45')
+
+    # Tempo "negativo" (ex: 0 até -10)
+    t_eval_neg = np.linspace(t_span[0], -t_span[1], num_steps)
+    sol_neg = solve_ivp(rhs, (0, -t_span[1]), [u0, v0, z0],
+                        t_eval=t_eval_neg, method='RK45')
+
+    return sol_neg, sol_pos
 
 def calcular_autovalores_e_autovetores(jacobiana):
     """
@@ -144,17 +154,17 @@ def calcular_autovalores_e_autovetores(jacobiana):
 
 def gerar_pontos_iniciais(u_c, v_c, z_c, N, N2, raio):
     """
-    Gera N pontos iniciais em um círculo de raio 'raio' no plano (u,v)
-    em torno de (u_c, v_c). Mantém z = z_c.
-    arrumar pra ser 3d
+    Gera N*N2 pontos na superfície de uma esfera de raio 'raio'
+    em torno de (u_c, v_c, z_c).
     """
-    thetas = np.linspace(0, 2*np.pi, N, endpoint=False)
-    phis = np.linspace(0, np.pi, N2, endpoint=False)
+    thetas = np.linspace(0, 2*np.pi, N, endpoint=False)   # Azimute
+    phis   = np.linspace(0, np.pi,   N2, endpoint=True)   # Colatitude
+
     pontos = []
     for theta in thetas:
         for phi in phis:
-            u_i = u_c + raio * np.cos(theta) * np.sin(phi)
-            v_i = v_c + raio * np.sin(theta) * np.sin(phi)
+            u_i = u_c + raio * np.sin(phi) * np.cos(theta)
+            v_i = v_c + raio * np.sin(phi) * np.sin(theta)
             z_i = z_c + raio * np.cos(phi)
             pontos.append([u_i, v_i, z_i])
     return pontos
@@ -164,15 +174,17 @@ if __name__ == "__main__":
     u_L, v_L, z_L = 0.1, 0.1, 0.1
     print(f"Valores iniciais: u_L = {u_L}, v_L = {v_L}, z_L = {z_L}")
 
-    t_vals, sol_prim = funcoes.resolver_trajetoria(u_L, v_L, z_L)
+    # Resolvendo trajetória "base" (L -> R) usando funcoes.resolver_trajetoria (já existente)
+    sol_prim2, sol_prim = funcoes.resolver_trajetoria(u_L, v_L, z_L)
+    print("Tamanho da lista de ul a ur", len(sol_prim.y[0]))
 
     # Pegamos o final da trajetória como ponto R
-    u_R = sol_prim.y[0, 1]
-    v_R = sol_prim.y[1, 1]
-    z_R = sol_prim.y[2, 1]
+    u_R = sol_prim.y[0, 1000]
+    v_R = sol_prim.y[1, 1000]
+    z_R = sol_prim.y[2, 1000]
     distance = np.sqrt((u_R - u_L)**2 + (v_R - v_L)**2 + (z_R - z_L)**2)
-    print(f"Valores finais: u_R = {u_R}, v_R = {v_R}, z_R = {z_R}")
-    
+    print(f"Ponto R = {u_R}, v_R = {v_R}, z_R = {z_R}")
+
     f_L = f(u_L, v_L, z_L)
     g_L = g(u_L, v_L, z_L)
     f_R = f(u_R, v_R, z_R)
@@ -206,13 +218,14 @@ if __name__ == "__main__":
     print("\nAutovalores negativos de J(U^R):", autovalores_neg_R)
     print("Autovetores negativos de J(U^R):\n", autovetores_neg_R)
 
-    # -------------- Exemplo de gerar N pontos iniciais --------------
+    # -------------- Exemplo de gerar N pontos iniciais na esfera --------------
     N = 6
-    N2 = 4         # número de pontos
+    N2 = 4
     raio = distance / 2
-    pontos_iniciais = gerar_pontos_iniciais(u_L, v_L, z_L, N,N2, raio)
+    print("Raio: ", raio)
+    pontos_iniciais = gerar_pontos_iniciais(u_L, v_L, z_L, N, N2, raio)
 
-    # ======= PLOTS 2D =======
+    # ======= PLOTS 2D da trajetória base (já resolvida em funcoes.resolver_trajetoria) =======
     fig, axes = plt.subplots(1, 3, figsize=(12, 5))
 
     # Converte a solução base para plotar via quiver (a cada "step" para não poluir)
@@ -267,38 +280,68 @@ if __name__ == "__main__":
     ax_uv.legend()
 
     # ================================================================
-    # Para cada ponto inicial do círculo, resolvemos a trajetória
-    # e plotamos nos subplots 2D.
+    # Para cada ponto inicial da esfera, resolvemos as trajetórias
+    # (0 -> +10) e (0 -> -10) e plotamos nos subplots 2D.
     # ================================================================
     for idx, (u0, v0, z0) in enumerate(pontos_iniciais):
-        t_loc, sol_loc = resolver_trajetoria(
+
+        sol_neg, sol_pos = resolver_trajetoria(
             u0, v0, z0, u_R, v_R, z_R, f_R, g_R, sigmaLR,
-            t_span=(0, 100), num_steps=1000
+            t_span=(0, 10), num_steps=600
         )
 
-        stepQ = 20
-        loc_u = sol_loc[0, ::stepQ]
-        loc_v = sol_loc[1, ::stepQ]
-        loc_z = sol_loc[2, ::stepQ]
+        # -- Extração das trajetórias (negativa e positiva)
+        u_neg = sol_neg.y[0]
+        v_neg = sol_neg.y[1]
+        z_neg = sol_neg.y[2]
 
-        # Quiver (u x z)
-        ax_uz.quiver(loc_u[:-1], loc_z[:-1],
-                     loc_u[1:] - loc_u[:-1],
-                     loc_z[1:] - loc_z[:-1],
-                     angles='xy', scale_units='xy', scale=1,
-                     label=f'Órbita {idx}' if idx < 2 else None)
+        u_pos = sol_pos.y[0]
+        v_pos = sol_pos.y[1]
+        z_pos = sol_pos.y[2]
 
-        # Quiver (v x z)
-        ax_vz.quiver(loc_v[:-1], loc_z[:-1],
-                     loc_v[1:] - loc_v[:-1],
-                     loc_z[1:] - loc_z[:-1],
-                     angles='xy', scale_units='xy', scale=1)
+        # Plotamos também a bolinha vermelha no ponto inicial
+        ax_uz.scatter(u0, z0, color='red', s=10)
+        ax_vz.scatter(v0, z0, color='red', s=10)
+        ax_uv.scatter(u0, v0, color='red', s=10)
 
-        # Quiver (u x v)
-        ax_uv.quiver(loc_u[:-1], loc_v[:-1],
-                     loc_u[1:] - loc_u[:-1],
-                     loc_v[1:] - loc_v[:-1],
-                     angles='xy', scale_units='xy', scale=1)
+        # Filtro para plotar com menos setas (para não poluir)
+        stepQ = 50
+
+        # -- Quiver (u x z) para a parte NEGATIVA
+        ax_uz.quiver(u_neg[:-1:stepQ], z_neg[:-1:stepQ],
+                     (u_neg[1::stepQ] - u_neg[:-1:stepQ]),
+                     (z_neg[1::stepQ] - z_neg[:-1:stepQ]),
+                     angles='xy', scale_units='xy', scale=2, color='orange')
+
+        # -- Quiver (u x z) para a parte POSITIVA
+        ax_uz.quiver(u_pos[:-1:stepQ], z_pos[:-1:stepQ],
+                     (u_pos[1::stepQ] - u_pos[:-1:stepQ]),
+                     (z_pos[1::stepQ] - z_pos[:-1:stepQ]),
+                     angles='xy', scale_units='xy', scale=2, color='green')
+
+        # -- Quiver (v x z) NEGATIVO
+        ax_vz.quiver(v_neg[:-1:stepQ], z_neg[:-1:stepQ],
+                     (v_neg[1::stepQ] - v_neg[:-1:stepQ]),
+                     (z_neg[1::stepQ] - z_neg[:-1:stepQ]),
+                     angles='xy', scale_units='xy', scale=2, color='orange')
+
+        # -- Quiver (v x z) POSITIVO
+        ax_vz.quiver(v_pos[:-1:stepQ], z_pos[:-1:stepQ],
+                     (v_pos[1::stepQ] - v_pos[:-1:stepQ]),
+                     (z_pos[1::stepQ] - z_pos[:-1:stepQ]),
+                     angles='xy', scale_units='xy', scale=2, color='green')
+
+        # -- Quiver (u x v) NEGATIVO
+        ax_uv.quiver(u_neg[:-1:stepQ], v_neg[:-1:stepQ],
+                     (u_neg[1::stepQ] - u_neg[:-1:stepQ]),
+                     (v_neg[1::stepQ] - v_neg[:-1:stepQ]),
+                     angles='xy', scale_units='xy', scale=2, color='orange')
+
+        # -- Quiver (u x v) POSITIVO
+        ax_uv.quiver(u_pos[:-1:stepQ], v_pos[:-1:stepQ],
+                     (u_pos[1::stepQ] - u_pos[:-1:stepQ]),
+                     (v_pos[1::stepQ] - v_pos[:-1:stepQ]),
+                     angles='xy', scale_units='xy', scale=2, color='green')
 
     plt.tight_layout()
     plt.show()
@@ -308,20 +351,26 @@ if __name__ == "__main__":
     fig_3d = plt.figure(figsize=(8, 6))
     ax_3d = fig_3d.add_subplot(111, projection='3d')
 
-    # Trajetória base (U^L -> U^R)
+    # Trajetória "base" (U^L -> U^R) (já resolvida)
     ax_3d.plot(base_u, base_v, base_z, color='gray', label='Trajet. base (U^L)')
 
     # Marca pontos L e R
     ax_3d.scatter(u_L, v_L, z_L, color='red', s=50, label='Ponto L')
     ax_3d.scatter(u_R, v_R, z_R, color='blue', s=50, label='Ponto R')
 
-    # Para cada ponto inicial do círculo, plotamos também a trajetória resultante em 3D:
+    # Para cada ponto inicial (u0, v0, z0), plotamos as duas trajetórias (neg e pos).
     for idx, (u0, v0, z0) in enumerate(pontos_iniciais):
-        t_loc, sol_loc = resolver_trajetoria(
+        sol_neg, sol_pos = resolver_trajetoria(
             u0, v0, z0, u_R, v_R, z_R, f_R, g_R, sigmaLR,
-            t_span=(0, 100), num_steps=1000
+            t_span=(0, 10), num_steps=600
         )
-        ax_3d.plot(sol_loc[0], sol_loc[1], sol_loc[2], alpha=0.8)
+        # Adiciona ponto inicial em vermelho
+        ax_3d.scatter(u0, v0, z0, color='red', s=20)
+
+        # Trajetória negativa
+        ax_3d.plot(sol_neg.y[0], sol_neg.y[1], sol_neg.y[2], alpha=0.8, color='orange')
+        # Trajetória positiva
+        ax_3d.plot(sol_pos.y[0], sol_pos.y[1], sol_pos.y[2], alpha=0.8, color='green')
 
     ax_3d.set_xlabel('u')
     ax_3d.set_ylabel('v')
