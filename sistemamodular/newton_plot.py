@@ -4,6 +4,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 
 def plotar_trajetorias(trajetorias):
+    print(len(trajetorias[1]))
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     
@@ -29,5 +30,8 @@ def plotar_trajetorias(trajetorias):
     ]
     for edge in edges:
         ax.plot(*zip(*edge), color='black')
+    
+    # Definir azimuth e elevation
+    ax.view_init(elev=30, azim=-130)
     
     plt.show()

@@ -4,8 +4,8 @@ from system import system_with_determinants
 
 def resolver_trajetoria(u0, v0, c0, s_span=(0, 10), s_span2=(0, -10)):
     # Get initial values for positive and negative spans
-    initial_pos = solve_ivp(system_with_determinants, s_span, [u0, v0, c0], method='LSODA', t_eval=np.linspace(s_span[0], s_span[1], 2000))
-    initial_neg = solve_ivp(system_with_determinants, s_span2, [u0, v0, c0], method='LSODA', t_eval=np.linspace(s_span2[0], s_span2[1], 2000))
+    initial_pos = solve_ivp(system_with_determinants, s_span, [u0, v0, c0], method='LSODA', t_eval=np.linspace(s_span[0], s_span[1], 20000))
+    initial_neg = solve_ivp(system_with_determinants, s_span2, [u0, v0, c0], method='LSODA', t_eval=np.linspace(s_span2[0], s_span2[1], 20000))
     return initial_pos, initial_neg
 
 def dentro_do_triangulo(u, v, c):

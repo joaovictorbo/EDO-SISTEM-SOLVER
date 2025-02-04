@@ -2,7 +2,7 @@ import numpy as np
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 
-alpha = 0
+alpha = 0.01
 muw0 = 1.0  # Viscosidade inicial sem polimero
 
 # Funções dadas

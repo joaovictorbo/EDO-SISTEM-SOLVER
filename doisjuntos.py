@@ -138,16 +138,16 @@ s_span = (0, 10)
 s_span2 = (0, -10)
 
 # Integração do sistema com determinantes
-sol = solve_ivp(system_with_determinants, s_span, y1, method='LSODA', t_eval=np.linspace(0, 0.5, 2000))
+sol = solve_ivp(system_with_determinants, s_span, y1, method='LSODA', t_eval=np.linspace(0, 0.5, 20000))
 getinicialvalues.y = np.hstack((getinicialvalues.y, sol.y))
 
-sol2 = solve_ivp(system_with_determinants, s_span2, y1neg, method='LSODA', t_eval=np.linspace(0, -0.5, 2000))
+sol2 = solve_ivp(system_with_determinants, s_span2, y1neg, method='LSODA', t_eval=np.linspace(0, -0.5, 20000))
 getinicialvaluesneg.y = np.hstack((getinicialvaluesneg.y, sol2.y))
 
 t_span = (0,10)
-sol3 = solve_ivp(system, t_span, [u0, v0, z0], method='RK45', t_eval=np.linspace(0,10,2000))
+sol3 = solve_ivp(system, t_span, [u0, v0, z0], method='RK45', t_eval=np.linspace(0,10,20000))
 t_span2 = (0,-10)
-sol4 = solve_ivp(system, t_span2, [u0, v0, z0], method='RK45', t_eval=np.linspace(0,-10,2000))
+sol4 = solve_ivp(system, t_span2, [u0, v0, z0], method='RK45', t_eval=np.linspace(0,-10,20000))
 
 # Função para verificar se um ponto está dentro do triângulo
 def dentro_do_triangulo(u, v, c):

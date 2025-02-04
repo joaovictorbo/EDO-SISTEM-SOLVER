@@ -51,7 +51,7 @@ def baricentrica(): #Mapeamento ou nao?
     return(x)
     
 def DadosIntegracao(): #Para integracao dos contatos
-    N = 20000 # Numero de pontos na curva integral do contato para h > 0
+    N = 200000 # Numero de pontos na curva integral do contato para h > 0
     h = 0.02#  # Passo de integração
     return(N, h)
 

@@ -228,9 +228,9 @@ trajetorias_divididas = dividir_trajetorias(trajectory)
 u0, v0, c0 = 0.1, 0.6, 0.3
 y0 = [u0, v0, c0]
 t_span = (0, 10)
-sol = solve_ivp(system, t_span, y0, method='LSODA', t_eval=np.linspace(0, 10, 2000))
+sol = solve_ivp(system, t_span, y0, method='LSODA', t_eval=np.linspace(0, 10, 20000))
 t_span2 = (0, -10)
-sol2 = solve_ivp(system, t_span2, y0, method='LSODA', t_eval=np.linspace(0, -10, 2000))
+sol2 = solve_ivp(system, t_span2, y0, method='LSODA', t_eval=np.linspace(0, -10, 20000))
 
 trajetorias1 = dividir_trajetorias(np.column_stack((sol.y[0], sol.y[1], sol.y[2])))
 trajetorias2 = dividir_trajetorias(np.column_stack((sol2.y[0], sol2.y[1], sol2.y[2])))

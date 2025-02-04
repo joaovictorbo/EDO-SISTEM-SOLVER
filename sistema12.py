@@ -6,9 +6,9 @@ from sistemamodular.system import system
 u0, v0, c0 = 0.3,0.6, 0.4
 y0 = [u0, v0, c0]
 t_span = (0,10)
-sol = solve_ivp(system, t_span, y0, method='LSODA', t_eval=np.linspace(0,10,2000))
+sol = solve_ivp(system, t_span, y0, method='LSODA', t_eval=np.linspace(0,10,20000))
 t_span2 = (0,-10)
-sol2 = solve_ivp(system, t_span2, y0, method='LSODA', t_eval=np.linspace(0,-10,2000))
+sol2 = solve_ivp(system, t_span2, y0, method='LSODA', t_eval=np.linspace(0,-10,20000))
 
 # Função para verificar se um ponto está dentro do triângulo
 def dentro_do_triangulo(u, v, c):

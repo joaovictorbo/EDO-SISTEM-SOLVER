@@ -1,7 +1,7 @@
 import numpy as np
 
 # Funções para os cálculos do sistema
-alpha = 0
+alpha = 0.001
 muw0 = 1.0  # Viscosidade inicial sem polimero
 
 def muw(c):  # Viscosidade da agua

@@ -3,7 +3,7 @@ import numpy as np
 from scipy.integrate import solve_ivp
 from system import system
 
-alpha = 0.001  # Parâmetro de relaxamento
+alpha = 0.01 # Parâmetro de relaxamento
 muw0 = 1.0  # Viscosidade inicial sem polimero
 
 def muw(c):
@@ -43,7 +43,7 @@ def compute_jacobian(u, v, c, u0, v0, f0, g0, z0, h=1e-6):
     G_v = (G(u, v + h, c, u0, f0, z0) - G(u, v - h, c, u0, f0, z0)) / (2*h)
     return np.array([[F_u, F_v], [G_u, G_v]])
 
-def newton_correction(u0, v0, c_prev, f0, g0, z0, iterations=10):
+def newton_correction(u0, v0, c_prev, f0, g0, z0, iterations=4):
     u, v = u0, v0
     for _ in range(iterations):
         B = np.array([F(u, v, c_prev, u0, v0, f0, g0), G(u, v, c_prev, u0, f0, z0)])
@@ -51,12 +51,13 @@ def newton_correction(u0, v0, c_prev, f0, g0, z0, iterations=10):
         try:
             S = np.linalg.solve(J, -B)
             u, v = u + S[0], v + S[1]
+            print(S)
         except np.linalg.LinAlgError:
             print("Jacobiana singular. Interrompendo ajuste.")
             break
     return u, v
 
-def resolver_trajetoria(u0, v0, c0, t_span=(0, 10), t_span2=(0, -10), num_steps=2000):
+def resolver_trajetoria(u0, v0, c0, t_span=(0, 10), t_span2=(0, -10), num_steps=20000):
     """
     Resolve a trajetória a partir das condições iniciais fornecidas, aplicando a correção de Newton em cada passo.
 

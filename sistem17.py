@@ -138,10 +138,10 @@ s_span = (0, 10)
 s_span2 = (0, -10)
 
 # Integração do sistema com determinantes
-sol = solve_ivp(system_with_determinants, s_span, y1, method='LSODA', t_eval=np.linspace(0, 10, 2000))
+sol = solve_ivp(system_with_determinants, s_span, y1, method='LSODA', t_eval=np.linspace(0, 10, 20000))
 getinicialvalues.y = np.hstack((getinicialvalues.y, sol.y))
 
-sol2 = solve_ivp(system_with_determinants, s_span2, y1neg, method='LSODA', t_eval=np.linspace(0, -10, 2000))
+sol2 = solve_ivp(system_with_determinants, s_span2, y1neg, method='LSODA', t_eval=np.linspace(0, -10, 20000))
 getinicialvaluesneg.y = np.hstack((getinicialvaluesneg.y, sol2.y))
 
 # Função para verificar se um ponto está dentro do triângulo

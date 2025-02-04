@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 from sistemamodular.system import system
 
-alpha = 10**-3
+alpha = 0.01
 muw0 = 1.0  # Viscosidade inicial sem polimero
 
 # Funções dadas
@@ -117,7 +117,6 @@ v0 = 0.6
 z0 = 0.4
 f0 = f(u0, v0, z0)
 g0 = g(u0, v0, z0)
-alpha = 10**-3
 
 def F(u, v, z):
     f_value = f(u, v, z)
