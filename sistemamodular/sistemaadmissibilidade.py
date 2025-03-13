@@ -169,17 +169,61 @@ def calcular_autovalores_e_autovetores(jacobiana):
     return ((autovalores[indices_positivos], autovetores[:, indices_positivos]),
             (autovalores[indices_negativos], autovetores[:, indices_negativos]))
 
-def gerar_pontos_iniciais(u_c, v_c, z_c, N, N2, raio):
-    thetas = np.linspace(0, 2*np.pi, N, endpoint=False)   # Azimute
-    phis   = np.linspace(0, np.pi,   N2, endpoint=True)    # Colatitude
+def gerar_pontos_iniciais(N, N2, N3):
+    # Função para gerar pontos na base triangular
+    def gerar_base(N):
+        u = np.linspace(0, 1, N)
+        v = np.linspace(0, 1, N)
+        pontos_base = []
+        for ui in u:
+            for vi in v:
+                if ui + vi < 1:
+                    pontos_base.append([ui, vi, 0])  # Base no plano z=0
+        return np.array(pontos_base)
 
-    pontos = []
-    for theta in thetas:
-        for phi in phis:
-            u_i = u_c + raio * np.sin(phi) * np.cos(theta)
-            v_i = v_c + raio * np.sin(phi) * np.sin(theta)
-            z_i = z_c + raio * np.cos(phi)
-            pontos.append([u_i, v_i, z_i])
+    # Função para gerar pontos nas faces laterais
+    def gerar_faces_laterais(N2):
+        pontos_laterais = []
+        
+        # Face lateral 1: entre (1, 0, 0) e (0, 0, 1)
+        u = np.linspace(0, 1, N2)
+        z = np.linspace(0, 1, N2)
+        for ui in u:
+            for zi in z:
+                pontos_laterais.append([1 - ui, 0, zi])
+        
+        # Face lateral 2: entre (0, 1, 0) e (0, 0, 1)
+        v = np.linspace(0, 1, N2)
+        for vi in v:
+            for zi in z:
+                pontos_laterais.append([0, 1 - vi, zi])
+        
+        # Face lateral 3: entre (0, 0, 1) e (1, 0, 0)
+        for ui in u:
+            for zi in z:
+                pontos_laterais.append([ui, 1 - ui, zi])
+
+        return np.array(pontos_laterais)
+
+    # Função para gerar pontos no topo (z=1)
+    def gerar_topo(N3):
+        u = np.linspace(0, 1, N3)
+        v = np.linspace(0, 1, N3)
+        pontos_topo = []
+        for ui in u:
+            for vi in v:
+                if ui + vi < 1:
+                    pontos_topo.append([ui, vi, 1])  # Topo no plano z=1
+        return np.array(pontos_topo)
+
+    # Gerar pontos para cada parte do prisma
+    pontos_base = gerar_base(N)
+    pontos_laterais = gerar_faces_laterais(N2)
+    pontos_topo = gerar_topo(N3)
+
+    # Combinar todos os pontos
+    pontos = np.vstack([pontos_base, pontos_laterais, pontos_topo])
+    
     return pontos
 
 if __name__ == "__main__":
@@ -233,9 +277,8 @@ if __name__ == "__main__":
     # Gerar pontos iniciais na esfera
     N = 6
     N2 = 4
-    raio = distance / 2
-    print("Raio:", raio)
-    pontos_iniciais = gerar_pontos_iniciais(u_L, v_L, z_L, N, N2, raio)
+    N3 = 6
+    pontos_iniciais = gerar_pontos_iniciais(N, N2, N3)
 
     # ======= PLOTS 2D da trajetória base (já resolvida) =======
     fig, axes = plt.subplots(1, 3, figsize=(12, 5))
