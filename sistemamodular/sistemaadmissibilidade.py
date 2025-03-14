@@ -6,7 +6,7 @@ import newton_funcoes as funcoes
 from jacobiana import calcular_jacobiana
 
 def dentro_do_triangulo(u, v, c):
-    return u >= 0 and v >= 0 and u + v <= 1 and 0 <= c <= 1
+    return 0 <= u <= 1 and 0 <= v <= 1  and 0 <= c <= 1
 
 # ----- PARÂMETROS GLOBAIS -----
 alpha = 0.001
@@ -111,9 +111,10 @@ def sigma_alpha(u_L, f_R, z_R, z_L):
 
 def system(s, y, u_R, v_R, z_R, f_R, g_R, sigma):
     u, v, z = y
-    du_ds = f(u, v, z) - f_R - sigma * (u - u_R)
-    dv_ds = g(u, v, z) - g_R - sigma * (v - v_R)
-    dz_ds = (epsilon_1 / epsilon_2) * (f_R * (z - z_R) - sigma * (u_R * (z - z_R) - alpha * (a(z) - a(z_R))))
+    du_ds = 2*u - u + 2/9 
+    dv_ds = 2*v - v + 2/9 
+    dz_ds = 2*z - z + 2/9 
+
     return [du_ds, dv_ds, dz_ds]
 
 def rk4_step(s, y, dt, u_R, v_R, z_R, f_R, g_R, sigma):
@@ -184,7 +185,7 @@ def gerar_pontos_iniciais(u_c, v_c, z_c, N, N2, raio):
 
 if __name__ == "__main__":
     # Valores iniciais
-    u_L, v_L, z_L = 0.1, 0.1, 0.1
+    u_L, v_L, z_L = 2/3, 2/3, 2/3
     print(f"Valores iniciais: u_L = {u_L}, v_L = {v_L}, z_L = {z_L}")
 
     # Resolvendo trajetória "base" (L -> R) usando a função já existente em funcoes
@@ -192,9 +193,9 @@ if __name__ == "__main__":
     print("Tamanho da lista de u de L a R:", len(sol_prim.y[0]))
 
     # Pegamos o final da trajetória como ponto R
-    u_R = sol_prim.y[0, 1000]
-    v_R = sol_prim.y[1, 1000]
-    z_R = sol_prim.y[2, 1000]
+    u_R = 1/3
+    v_R = 1/3
+    z_R = 1/3
     distance = np.sqrt((u_R - u_L)**2 + (v_R - v_L)**2 + (z_R - z_L)**2)
     print(f"Ponto R = {u_R}, {v_R}, {z_R}")
 
