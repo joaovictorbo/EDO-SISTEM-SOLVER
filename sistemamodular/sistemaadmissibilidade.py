@@ -111,9 +111,9 @@ def sigma_alpha(u_L, f_R, z_R, z_L):
 
 def system(s, y, u_R, v_R, z_R, f_R, g_R, sigma):
     u, v, z = y
-    du_ds = 2*u - u + 2/9 
-    dv_ds = 2*v - v + 2/9 
-    dz_ds = 2*z - z + 2/9 
+    du_ds = 3**u - u + 2/9 
+    dv_ds = 2**v - v + 2/9 
+    dz_ds = 0
 
     return [du_ds, dv_ds, dz_ds]
 
@@ -340,7 +340,6 @@ if __name__ == "__main__":
     # ======= PLOT 3D =======
     fig_3d = plt.figure(figsize=(8, 6))
     ax_3d = fig_3d.add_subplot(111, projection='3d')
-    ax_3d.plot(base_u, base_v, base_z, color='gray', label='Trajet. base (U^L)')
     ax_3d.scatter(u_L, v_L, z_L, color='red', s=50, label='Ponto L')
     ax_3d.scatter(u_R, v_R, z_R, color='blue', s=50, label='Ponto R')
 
