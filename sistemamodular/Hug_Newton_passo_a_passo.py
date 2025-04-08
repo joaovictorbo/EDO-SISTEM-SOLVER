@@ -141,11 +141,14 @@ def main():
     
     # -------------------------------------------------------------------------
     # Primeiro passo:
-    # Obtenha o palpite inicial U_integrado para U1 integrando o sistema (19) a partir de U0.
+    # Obtenha o palpite inicial U_corr para U1 integrando o sistema (19) a partir de U0.
     # -------------------------------------------------------------------------
     U_integrado = system(h_step, U0)  # system: gera um palpite inicial aproximado
     # Use U0 como base para a correção do primeiro ponto
-    U_corr, converged, iters = newton_iteration(U_integrado, U0, h_step, U0,
+    U_corr = U0 + h_step * U_integrado # Um passo de integracao por Euler para o primeiro ponto da curva
+                                       # a ser corrigido por Newton
+    Ua = U0
+    U_corr, converged, iters = newton_iteration(U_corr, Ua, h_step, U0,
                                                 tol=tol_newton, max_iter=max_iter_newton)
     if not converged:
         print("Newton não convergiu no primeiro passo.")
@@ -157,14 +160,13 @@ def main():
     
     # Para os próximos passos:
     # U_prev_prev guarda o penúltimo ponto corrigido e U_prev o último.
-    U_prev_prev = U0.copy()
-    U_prev = U_corr.copy()
+    U_prev_prev = U0.copy() # Passo (5) do documento 
+    U_a = U_corr.copy() # Novo Ua do passo (5)
     
     for step in range(1, num_steps):
         # Gera o palpite para o próximo ponto usando extrapolação linear:
-        U_guess = U_prev + h_step * (U_prev - U_prev_prev)
+        U_guess = U_a+ h_step * (U_a - U_prev_prev)
         # Use o último ponto corrigido (U_prev) como base na correção (congela o valor de z, por exemplo)
-        Ua = U_prev.copy()
         U_new, converged, iters = newton_iteration(U_guess, Ua, h_step, U0,
                                                    tol=tol_newton, max_iter=max_iter_newton)
         if not converged:
@@ -175,8 +177,8 @@ def main():
             break
         Upos.append(U_new.copy())
         # Atualiza os pontos para a próxima extrapolação
-        U_prev_prev = U_prev.copy()
-        U_prev = U_new.copy()
+        U_prev_prev = U_a
+        U_a = U_new.copy()
     
     # Converte a lista de pontos para um array para a plotagem
     Upos = np.array(Upos)
