@@ -28,20 +28,20 @@ from system import F, G, dF_du, dF_dv, dF_dz, dG_du, dG_dv, dG_dz, f, g, a, alph
 # =============================================================================
 # Equação de parametrização H e suas derivadas (conforme (45) e (46)-(48))
 # =============================================================================
-def H_equac(U, Ua, h):
+def H_equac(U, Ua, h): #Eq (45)  da versao 2025-04-02
     """
     Calcula a equação de parametrização pelo comprimento de arco:
       H(u,v,z; ua,va,za, h) = (u - ua)**2 + (v - va)**2 + (z - za)**2 - h**2
     """
     return (U[0] - Ua[0])**2 + (U[1] - Ua[1])**2 + (U[2] - Ua[2])**2 - h**2
 
-def dH_du(U, Ua):
+def dH_du(U, Ua): #Eq (46)  da versao 2025-04-02
     return 2 * (U[0] - Ua[0])
 
-def dH_dv(U, Ua):
+def dH_dv(U, Ua): #Eq (47)  da versao 2025-04-02
     return 2 * (U[1] - Ua[1])
 
-def dH_dz(U, Ua):
+def dH_dz(U, Ua): #Eq (48)  da versao 2025-04-02
     return 2 * (U[2] - Ua[2])
 
 # =============================================================================
@@ -115,7 +115,7 @@ def newton_iteration(U_guess, Ua, h, U0, tol=1e-6, max_iter=20):
         F_val = FGH(U, Ua, h, U0)
         norm_F = np.linalg.norm(F_val)
         if norm_F < tol:
-            print('norm_F=', norm_F, 'newton_iteraction passo i =', i)
+            #print('newton_iteraction: norm_F=', norm_F, 'passo i =', i)
             return U, True, i+1
         J = jacobian_FGH(U, Ua, h, U0)
         try:
@@ -124,6 +124,8 @@ def newton_iteration(U_guess, Ua, h, U0, tol=1e-6, max_iter=20):
             print("Matriz singular na iteração de Newton.")
             return U, False, i+1
         U += delta
+        #print('newton_iteraction: Correcao de U_guess=', U, 'passo i =', i)
+    print('\n Quantidade de iteracoes do metodo de Newton = ', i)
     return U, False, max_iter
 
 # =============================================================================
@@ -132,13 +134,14 @@ def newton_iteration(U_guess, Ua, h, U0, tol=1e-6, max_iter=20):
 def main():
     # Ponto inicial no prisma
     U0 = np.array([0.1, 0.6, 0.2])  # U0 = (u0, v0, z0)
-    h_step = 0.01                   # Passo de comprimento de arco desejado
+    h_step = 0.1                   # Passo de comprimento de arco desejado
     tol_newton = 1e-6               # Tolerância para o método de Newton
-    max_iter_newton = 100        # Número máximo de iterações de Newton por passo
-    num_steps = 100                 # Número máximo de pontos do ramo
+    max_iter_newton = 10       # Número máximo de iterações de Newton por passo
+    num_steps = 4               # Número máximo de pontos do ramo
     
     # Lista para armazenar os pontos do ramo (para h > 0)
     Upos = [U0.copy()]
+    print('main: U0=', Upos)
     
     # -------------------------------------------------------------------------
     # Primeiro passo:
@@ -146,14 +149,16 @@ def main():
     # -------------------------------------------------------------------------
     U_integrado = system(h_step, U0)  # system: gera um palpite inicial aproximado
     # Use U0 como base para a correção do primeiro ponto
-    print('Valor funcoes do sistema 12=', U_integrado)
-    U_corr = U0 + 0.5 * U_integrado # Um passo de integracao por Euler para o primeiro ponto da curva
+    #print('main: lado direito do sistema 19 (P, Q, R) normalizado=', U_integrado)
+     
+    U_corr = U0 + h_step * U_integrado # Um passo de integracao por Euler para o primeiro ponto da curva
                                        # a ser corrigido por Newton
-    print('U1^0  por Euler', U_corr)
+    #print('main: U_corr = U0 + h_step * U_integrado', U_corr)
     Ua = U0
+    #print('\n main: Inicia as correcoes de U_corr por Newton para o primeiro ponto U_1 \n')
     U_corr, converged, iters = newton_iteration(U_corr, Ua, h_step, U0,
                                                 tol=tol_newton, max_iter=max_iter_newton)
-    print('U1^k corr  de U1^0 por Newton', U_corr, 'com iters iteracoes do Newton_iteraction=', iters)
+    #print('main: U1^k corrigido  de U_corr por Newton', U_corr, 'com iters iteracoes do Newton_iteraction=', iters)
     if not converged:
         print("Newton não convergiu no primeiro passo.")
         return
@@ -161,20 +166,23 @@ def main():
         print("O ponto corrigido não está no prisma.")
         return
     Upos.append(U_corr.copy())
-    print('Upos=', Upos)
+    print('main: U_corr=', U_corr)
     
     # Para os próximos passos:
     # U_prev_prev guarda o penúltimo ponto corrigido e U_prev o último.
-    U_prev_prev = U0.copy() # Passo (5) do documento 
-    U_a = U_corr.copy() # Novo Ua do passo (5)
+    U_prev_prev = U0.copy() # Passo (5) do documento. U_pos[0]
+    U_a = U_corr.copy() # Novo Ua do passo (5). U_pos[1]
+    print('main: U_prev_prev=', U_prev_prev)
+    print('main: U_a=', U_a)
     
     for step in range(1, num_steps):
         # Gera o palpite para o próximo ponto usando extrapolação linear:
         norma = np.linalg.norm(U_a - U_prev_prev)
-        print('norma=', norma)
-        U_guess = U_a + h_step/norma * (U_a - U_prev_prev)
-        print('U_guess=', U_guess, 'U_step = ', step)
+        #print('\n main; loop in step. step =', step, ' norma(U_a - U_prep_prev) =', norma)
+        U_guess = U_a + (h_step/norma) * (U_a - U_prev_prev)
+        print('main: U_guess= U_a + h_step/norma * (U_a - U_prev_prev) =', U_guess)
         # Use o último ponto corrigido (U_prev) como base na correção (congela o valor de z, por exemplo)
+        #print('main; loop in step. Inicia correcoes por Newton de U_guess')
         U_new, converged, iters = newton_iteration(U_guess, Ua, h_step, U0,
                                                    tol=tol_newton, max_iter=max_iter_newton)
         if not converged:
@@ -183,14 +191,15 @@ def main():
         if not in_prisma(U_new):
             print(f"Ponto fora do prisma no passo {step}. Encerrando iteração.")
             break
+        #print('main; loop in step. Finalizou as correcoes por Newton de U_guess no step =', step)
         Upos.append(U_new.copy())
-        print('len(Upos[:,0])=', len(Upos), 'U_step =', step)
+        print('\n main; loop in step =', len(Upos), 'U_corrigido =', U_new)
         # Atualiza os pontos para a próxima extrapolação
-        print('U_prev_prev=', U_prev_prev)
+        print('main; loop in step: U_a =', U_a)
         U_prev_prev = U_a
-        print('U_a antes=', U_a)
+        print('main; loop in step: atualiza U_prev_prev por U_a=', U_prev_prev)
         U_a = U_new.copy()
-        print('U_a depois=', U_a)
+        print('main; loop in step: atualiza U_a por U_new_corrigido=', U_a)
     
     # Converte a lista de pontos para um array para a plotagem
     Upos = np.array(Upos)
@@ -198,7 +207,17 @@ def main():
     # Plotagem do ramo da curva de Hugoniot obtido (h > 0)
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    ax.plot(Upos[:, 0], Upos[:, 1], Upos[:, 2], 'o-', label='Ramo Hugoniot (Newton 3 eq)')
+    ax.plot(Upos[:, 0], Upos[:, 1], Upos[:, 2], 'm-', label='Ramo Hugoniot (Newton 3 eq)')
+    # O prisma nas 9 linhas abaixo
+    ax.plot([0.0, 0.0], [0.0, 0.0], [0.0, 1.0], 'k-')
+    ax.plot([0.0, 0.0], [1.0, 1.0], [0.0, 1.0], 'k-')
+    ax.plot([1.0, 1.0], [1.0, 1.0], [0.0, 1.0], 'k-')
+    ax.plot([0.0, 0.0], [0.0, 1.0], [0.0, 0.0], 'k-')
+    ax.plot([0.0, 0.0], [0.0, 1.0], [1.0, 1.0], 'k-')
+    ax.plot([0.0, 1.0], [1.0, 1.0], [0.0, 0.0], 'k-')
+    ax.plot([0.0, 1.0], [1.0, 1.0], [1.0, 1.0], 'k-')
+    ax.plot([0.0, 1.0], [0.0, 1.0], [0.0, 0.0], 'k-')
+    ax.plot([0.0, 1.0], [0.0, 1.0], [1.0, 1.0], 'k-')
     ax.set_xlabel('u')
     ax.set_ylabel('v')
     ax.set_zlabel('z')

@@ -2,7 +2,7 @@ import numpy as np
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 
-alpha = 0
+alpha = 0.001
 muw0 = 1.0  # Viscosidade inicial sem polímero
 
 # Funções dadas
@@ -68,32 +68,32 @@ def dg_dz(u, v, z):
     return -v**2 / muo() * Dz(u, v, z) / (D(u, v, z)**2)
 
 # Funções F e G do sistema de Rankine-Hugoniot
-def F(u, v, z, f0, v0, g0, u0):
+def F(u, v, z, f0, v0, g0, u0): # Eq. 29(a) da versao 2025-04-02
     f_value = f(u, v, z)
     g_value = g(u, v, z)
     return (f_value - f0) * (v - v0) - (g_value - g0) * (u - u0)
 
-def G(u, v, z, f0, z0, u0, a, alpha):
+def G(u, v, z, f0, z0, u0, a, alpha): # Eq. 29(b) da versao 2025-04-02
     f_value = f(u, v, z)
     return (f_value - f0) * (u0 * (z - z0) + alpha * (a(z) - a(z0))) - f0 * (z - z0) * (u - u0)
 
 # Derivadas parciais de F e G
-def dF_du(u, v, z, f0, v0, g0, u0):
+def dF_du(u, v, z, f0, v0, g0, u0): #Eq (30)  da versao 2025-04-02
     return df_du(u, v, z) * (v - v0) - dg_du(u, v, z) * (u - u0) - (g(u, v, z) - g0)
 
-def dF_dv(u, v, z, f0, v0, g0, u0):
+def dF_dv(u, v, z, f0, v0, g0, u0): #Eq (31)  da versao 2025-04-02
     return df_dv(u, v, z) * (v - v0) - dg_dv(u, v, z) * (u - u0) + (f(u, v, z) - f0)
 
-def dF_dz(u, v, z, f0, v0, g0, u0):
+def dF_dz(u, v, z, f0, v0, g0, u0): #Eq (32)  da versao 2025-04-02
     return df_dz(u, v, z) * (v - v0) - dg_dz(u, v, z) * (u - u0)
 
-def dG_du(u, v, z, f0, z0, u0, alpha):
+def dG_du(u, v, z, f0, z0, u0, alpha): #Eq (33)  da versao 2025-04-02
     return df_du(u, v, z) * (u0 * (z - z0) + alpha * (a(z) - a(z0))) - f0 * (z - z0)
 
-def dG_dv(u, v, z, f0, z0, u0, alpha):
+def dG_dv(u, v, z, f0, z0, u0, alpha): #Eq (34)  da versao 2025-04-02
     return df_dv(u, v, z) * (u0 * (z - z0) + alpha * (a(z) - a(z0)))
 
-def dG_dz(u, v, z, f0, z0, u0, alpha):
+def dG_dz(u, v, z, f0, z0, u0, alpha): #Eq (35)  da versao 2025-04-02
     return (df_dz(u, v, z) * (u0 * (z - z0) + alpha * (a(z) - a(z0))) +
             (f(u, v, z) - f0) * (u0 + alpha * da_dz(z)) - f0 * (u - u0))
 
@@ -119,15 +119,15 @@ def da_dc(c):
 def lambdac(u, v, c):
     return f(u, v, c) / (u + alpha * da_dc(c))
 
-def detalpha(u, v, c):
+def detalpha(u, v, c): # D_r da versao 2025-04-02
     return ((df_du(u, v, c) - lambdac(u, v, c)) *
             (dg_dv(u, v, c) - lambdac(u, v, c)) - df_dv(u, v, c) * dg_du(u, v, c))
 
-def det1(u, v, c):
+def det1(u, v, c): #D_p da versao 2025-04-02
     return (df_dv(u, v, c) * dg_dz(u, v, c) -
             df_dz(u, v, c) * (dg_dv(u, v, c) - lambdac(u, v, c)))
 
-def det2(u, v, c):
+def det2(u, v, c): #D_q da versao 2025-04-02
     return (df_dz(u, v, c) * dg_du(u, v, c) -
             (df_du(u, v, c) - lambdac(u, v, c)) * dg_dz(u, v, c))
 
@@ -143,7 +143,7 @@ def r(u, v, c):
 def N(u, v, c):
     return np.sqrt(p(u, v, c)**2 + q(u, v, c)**2 + r(u, v, c)**2)
 
-def system(s, y):
+def system(s, y): # Sistema (19) da versao 2025-04-02
     u, v, c = y
     eq1 = p(u, v, c) / N(u, v, c) if N(u, v, c) else None
     eq2 = q(u, v, c) / N(u, v, c) if N(u, v, c) else None
