@@ -133,11 +133,11 @@ def newton_iteration(U_guess, Ua, h, U0, tol=1e-6, max_iter=20):
 # =============================================================================
 def main():
     # Ponto inicial no prisma
-    U0 = np.array([0.1, 0.6, 0.2])  # U0 = (u0, v0, z0)
+    U0 = np.array([0.1, 0.6, 0.3])  # U0 = (u0, v0, z0)
     h_step = 0.1                   # Passo de comprimento de arco desejado
-    tol_newton = 1e-6               # Tolerância para o método de Newton
+    tol_newton = 0.1#1e-6               # Tolerância para o método de Newton
     max_iter_newton = 10       # Número máximo de iterações de Newton por passo
-    num_steps = 4               # Número máximo de pontos do ramo
+    num_steps = 3        # Número máximo de pontos do ramo
     
     # Lista para armazenar os pontos do ramo (para h > 0)
     Upos = [U0.copy()]
@@ -166,7 +166,7 @@ def main():
         print("O ponto corrigido não está no prisma.")
         return
     Upos.append(U_corr.copy())
-    print('main: U_corr=', U_corr)
+    print('main: calculado o primeiro ponto (alem do U0) U_pos[1]=', U_corr)
     
     # Para os próximos passos:
     # U_prev_prev guarda o penúltimo ponto corrigido e U_prev o último.
@@ -175,10 +175,10 @@ def main():
     print('main: U_prev_prev=', U_prev_prev)
     print('main: U_a=', U_a)
     
-    for step in range(1, num_steps):
+    for step in range(1, num_steps+1):
         # Gera o palpite para o próximo ponto usando extrapolação linear:
         norma = np.linalg.norm(U_a - U_prev_prev)
-        #print('\n main; loop in step. step =', step, ' norma(U_a - U_prep_prev) =', norma)
+        print('\n main; loop in step. step da norma =', step, ' norma(U_a - U_prep_prev) =', norma)
         U_guess = U_a + (h_step/norma) * (U_a - U_prev_prev)
         print('main: U_guess= U_a + h_step/norma * (U_a - U_prev_prev) =', U_guess)
         # Use o último ponto corrigido (U_prev) como base na correção (congela o valor de z, por exemplo)
@@ -191,33 +191,37 @@ def main():
         if not in_prisma(U_new):
             print(f"Ponto fora do prisma no passo {step}. Encerrando iteração.")
             break
-        #print('main; loop in step. Finalizou as correcoes por Newton de U_guess no step =', step)
+        print('main; loop in step. Finalizaram as correcoes por Newton de U_guess no step =', step)
         Upos.append(U_new.copy())
-        print('\n main; loop in step =', len(Upos), 'U_corrigido =', U_new)
+        print('\n main; loop in step =', step, 'U_corrigido =', U_new)
+        print('\n main; loop in step =', step, 'calculados', len(Upos), 'pontos')
         # Atualiza os pontos para a próxima extrapolação
-        print('main; loop in step: U_a =', U_a)
+        print('main; loop in step: U_a anterior =', U_a)
         U_prev_prev = U_a
         print('main; loop in step: atualiza U_prev_prev por U_a=', U_prev_prev)
         U_a = U_new.copy()
         print('main; loop in step: atualiza U_a por U_new_corrigido=', U_a)
     
+    print('main; terminou o loop das correcoes e calculo dos pontos com step=', step, 'de', num_steps, 'previstos')
     # Converte a lista de pontos para um array para a plotagem
     Upos = np.array(Upos)
     
     # Plotagem do ramo da curva de Hugoniot obtido (h > 0)
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
+    ax.plot(Upos[0, 0], Upos[0, 1], Upos[0, 2], 'ro', label='Ponto Inicial')
+    ax.plot(Upos[-1, 0], Upos[-1, 1], Upos[-1, 2], 'bo', label='Ponto Final')
     ax.plot(Upos[:, 0], Upos[:, 1], Upos[:, 2], 'm-', label='Ramo Hugoniot (Newton 3 eq)')
     # O prisma nas 9 linhas abaixo
     ax.plot([0.0, 0.0], [0.0, 0.0], [0.0, 1.0], 'k-')
     ax.plot([0.0, 0.0], [1.0, 1.0], [0.0, 1.0], 'k-')
-    ax.plot([1.0, 1.0], [1.0, 1.0], [0.0, 1.0], 'k-')
+    ax.plot([1.0, 1.0], [0.0, 0.0], [0.0, 1.0], 'k-')
     ax.plot([0.0, 0.0], [0.0, 1.0], [0.0, 0.0], 'k-')
     ax.plot([0.0, 0.0], [0.0, 1.0], [1.0, 1.0], 'k-')
-    ax.plot([0.0, 1.0], [1.0, 1.0], [0.0, 0.0], 'k-')
-    ax.plot([0.0, 1.0], [1.0, 1.0], [1.0, 1.0], 'k-')
-    ax.plot([0.0, 1.0], [0.0, 1.0], [0.0, 0.0], 'k-')
-    ax.plot([0.0, 1.0], [0.0, 1.0], [1.0, 1.0], 'k-')
+    ax.plot([0.0, 1.0], [0.0, 0.0], [0.0, 0.0], 'k-')
+    ax.plot([0.0, 1.0], [0.0, 0.0], [1.0, 1.0], 'k-')
+    ax.plot([0.0, 1.0], [1.0, 0.0], [0.0, 0.0], 'k-')
+    ax.plot([0.0, 1.0], [1.0, 0.0], [1.0, 1.0], 'k-')
     ax.set_xlabel('u')
     ax.set_ylabel('v')
     ax.set_zlabel('z')
