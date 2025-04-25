@@ -135,7 +135,7 @@ def main():
     tol_newton = 1e-6               # Tolerância para o método de Newton
     max_iter_newton = 10        # Número máximo de iterações de Newton por passo
     num_steps = 100                 # Número máximo de pontos do ramo
-    
+    print('Problema na terceira iteracao?')
     # Lista para armazenar os pontos do ramo (para h > 0)
     Upos = [U0.copy()]
     
