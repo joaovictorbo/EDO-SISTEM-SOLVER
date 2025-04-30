@@ -110,6 +110,8 @@ def newton_iteration(U_guess, Ua, h, U0, tol=1e-6, max_iter=20):
     Retorna:
       U_corr, converged, iter_used
     """
+    print('------>newton: Para conferir os dados de entrada. U_guess=', U_guess)
+    print('------>newton: Ua=', Ua, 'U0=', U0, 'tol=', tol, 'max_iter=', max_iter, '\n\n')
     U = U_guess.copy()
     for i in range(max_iter):
         F_val = FGH(U, Ua, h, U0)
@@ -135,11 +137,11 @@ def newton_iteration(U_guess, Ua, h, U0, tol=1e-6, max_iter=20):
 # =============================================================================
 def main():
     # Ponto inicial no prisma
-    U0 = np.array([0.1, 0.6, 0.3])  # U0 = (u0, v0, z0)
-    h_step = 0.01                   # Passo de comprimento de arco desejado
+    U0 = np.array([0.2, 0.4, 0.2])  # U0 = (u0, v0, z0)
+    h_step = 0.001                   # Passo de comprimento de arco desejado
     tol_newton = 0.01#1e-6               # Tolerância para o método de Newton
     max_iter_newton = 10       # Número máximo de iterações de Newton por passo
-    num_steps = 50        # Número máximo de pontos do ramo
+    num_steps = 1000        # Número máximo de pontos do ramo
     
     # Lista para armazenar os pontos do ramo (para h > 0)
     Upos = [U0.copy()]
@@ -177,24 +179,27 @@ def main():
     # Para os próximos passos:
     # U_prev_prev guarda o penúltimo ponto corrigido e U_prev o último.
     U_prev_prev = U0.copy() # Passo (5) do documento. U_pos[0]
-    U_a = U_corr.copy() # Novo Ua do passo (5). U_pos[1]
+    Ua = U_corr.copy() # Novo Ua do passo (5). U_pos[1]
     print('main: U_prev_prev=', U_prev_prev)
-    print('main: U_a=', U_a, '\n\n')
+    print('main: U_a=', Ua, '\n\n')
+    
+    norma = np.linalg.norm(Ua - U_prev_prev)
+    print('main: step 0 norm(U_a - U_prev_prev) ',  norma, '\n')
+ 
     
     for step in range(1, num_steps+1):
         # Gera o palpite para o próximo ponto usando extrapolação linear:
-        FGH_de_Ua = FGH(U_a, U_prev_prev, h_step, U0)
-        print('main: loop in step FGH_de_Ua=', FGH_de_Ua, '\n')
+        FGH_de_Ua = FGH(Ua, U_prev_prev, h_step, U0)
+        print('main: loop in step=',step, ' FGH_de_Ua=', FGH_de_Ua, '\n')
         
-            
-        norma = np.linalg.norm(U_a - U_prev_prev)
-        print('main: loop in step ', step, ': O ERRO ESTARIA AQUI? norma(U_a - U_prep_prev) =', norma, '\n')
         
-        U_guess = U_a + (h_step/norma) * (U_a - U_prev_prev)
+        U_guess = Ua + (h_step/norma) * (Ua - U_prev_prev)
         print('main: h_step/norma =', h_step/norma)
         print('main: U_guess= U_a + h_step/norma * (U_a - U_prev_prev) =', U_guess)
         # Use o último ponto corrigido (U_prev) como base na correção (congela o valor de z, por exemplo)
         #print('main; loop in step. Inicia correcoes por Newton de U_guess')
+        print('main: conferindo o valor de h_step =', h_step, 'para chamar Newton')
+        print('main: U_a=', Ua, '\n\n')
         U_new, converged, iters = newton_iteration(U_guess, Ua, h_step, U0,
                                                    tol=tol_newton, max_iter=max_iter_newton)
         if not converged:
@@ -205,15 +210,20 @@ def main():
             break
         print('main; loop in step. Finalizaram as correcoes por Newton de U_guess no step =', step)
         Upos.append(U_new.copy())
-        print('\n main: U_a=', U_a)
+        print('\n main: U_a=', Ua)
         print('main; loop in step =', step, 'U_corrigido =', U_new)
         print('main; loop in step =', step, 'calculados', len(Upos), 'pontos \n')
         # Atualiza os pontos para a próxima extrapolação
-        print('main; loop in step: U_a anterior =', U_a)
-        U_prev_prev = U_a
+        print('main; loop in step: U_a anterior =', Ua)
+        U_prev_prev = Ua
         print('main; loop in step: atualiza U_prev_prev por U_a=', U_prev_prev)
-        U_a = U_new.copy()
-        print('main; loop in step: atualiza U_a por U_new_corrigido=', U_a, '\n\n')
+        Ua = U_new.copy()
+        print('main; loop in step: atualiza U_a por U_new_corrigido=', Ua, '\n\n')
+        
+                   
+        norma = np.linalg.norm(Ua - U_prev_prev)
+        print('main: loop in step ', step, ': O ERRO ESTARIA AQUI? norma(U_a - U_prep_prev) =', norma, '\n')
+ 
     
     print('main; terminou o loop das correcoes e calculo dos pontos com step=', step, 'de', num_steps, 'previstos')
     # Converte a lista de pontos para um array para a plotagem
