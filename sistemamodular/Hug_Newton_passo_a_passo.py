@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Hug_Newton_passo_a_passo.py
+    Hug_Newton_passo_a_passo.py
 
 Este script implementa o ramo da curva de Hugoniot do sistema perturbado pela adsorção
 que aproxima a curva de contato via o método de Newton para três equações, conforme descrito
@@ -18,6 +18,7 @@ Autor: [Seu Nome]
 Data: [Data]
 """
 
+from matplotlib.pylab import LinAlgError
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -94,41 +95,33 @@ def jacobian_FGH(U, Ua, h, U0):
 # =============================================================================
 # Iteração de Newton para corrigir o palpite inicial
 # =============================================================================
+
 def newton_iteration(U_guess, Ua, h, U0, tol=1e-6, max_iter=20):
     """
-    Aplica o método de Newton para resolver o sistema:
-         F(U, U0) = 0,  G(U, U0) = 0,  H(U, Ua, h) = 0.
-    
-    Parâmetros:
-      U_guess  : palpite inicial para U (vetor [u, v, z])
-      Ua       : ponto base para a equação de comprimento de arco (usualmente o último ponto corrigido)
-      h        : passo (comprimento de arco desejado)
-      U0       : ponto inicial fixo do ramo (para referência em F e G)
-      tol      : tolerância para convergência
-      max_iter : número máximo de iterações
-      
-    Retorna:
-      U_corr, converged, iter_used
+    Aplica o método de Newton para resolver FGH=0, imprimindo det(J) e cond(J).
     """
-    #print('------>newton: Para conferir os dados de entrada. U_guess=', U_guess)
-    #print('------>newton: Ua=', Ua, 'U0=', U0, 'tol=', tol, 'max_iter=', max_iter, '\n\n')
     U = U_guess.copy()
     for i in range(max_iter):
         F_val = FGH(U, Ua, h, U0)
         norm_F_val = np.linalg.norm(F_val)
-        print('------> newton_iteraction i = ', i, 'FGH=', F_val)
-        print('------> newton_iteraction: norm_F_val =', norm_F_val, 'tol =', tol)
-        if norm_F_val < tol:
-            print('------> newton_iteraction convergiu na iteracao', i)
-            return U, True, i+1
+        # Monta a Jacobiana
         J = jacobian_FGH(U, Ua, h, U0)
+        # Determinante e condicionamento
+        detJ  = np.linalg.det(J)
+        condJ = np.linalg.cond(J)
+        print(f"  it={i:2d} | ||F||={norm_F_val:.3e} | det(J)={detJ:.3e} | cond(J)={condJ:.3e}")
+        # Checa convergência
+        if norm_F_val < tol:
+            print(f"  → convergiu em {i} iterações\n")
+            return U, True, i+1
+        # Resolve o sistema
         try:
             delta = np.linalg.solve(J, -F_val)
-        except np.linalg.LinAlgError:
-            print("------>Matriz singular na iteração de Newton.")
+        except LinAlgError:
+            print(f"  → Jacobiana singular (cond={condJ:.3e}). Abortando.\n")
             return U, False, i+1
         U += delta
-    print('------> newton_iteraction não convergiu após', i+1, 'iterações \n')
+    print(f"  → não convergiu após {max_iter} iterações (último cond={condJ:.3e})\n")
     return U, False, max_iter
 
 # =============================================================================
